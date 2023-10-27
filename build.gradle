@@ -11,6 +11,8 @@ repositories {
 }
 
 dependencies {
+    implementation files("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\Grammar-Tools-Folder\\kotlin-grammar-tools-0.1-43.jar")
+    //implementation files("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\Grammar-Tools-Folder\\kotlin-grammar-parser-0.1.jar") (can be removed, not needed now)
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
 }
 
