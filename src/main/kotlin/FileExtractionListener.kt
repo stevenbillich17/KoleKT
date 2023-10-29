@@ -1,7 +1,8 @@
-import DTO.ClassDTO
-import DTO.FileDTO
-import DTO.MethodDTO
-import DTO.ParameterDTO
+import dtos.ClassDTO
+import dtos.FileDTO
+import dtos.MethodDTO
+import dtos.AttributeDTO
+import enums.AttributeType
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
@@ -51,15 +52,37 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                 classDTO.classMethods.add(methodDTO)
             }
         } else if (declaration.propertyDeclaration() != null) {
-            parsePropertyDeclaration(declaration.propertyDeclaration())
+            parsePropertyDeclaration(declaration.propertyDeclaration())?.let { attributeDTO ->
+                classDTO.classFields.add(attributeDTO) }
         }
     }
 
-    private fun parsePropertyDeclaration(propertyDeclaration: KotlinParser.PropertyDeclarationContext) {
+    private fun parsePropertyDeclaration(propertyDeclaration: KotlinParser.PropertyDeclarationContext) : AttributeDTO? {
         var propertyName: String? = null
-        propertyDeclaration.propertyDelegate()?.let {
-            println(it.text)
+        var propertyType: String? = null
+        propertyDeclaration.variableDeclaration()?.let {
+            it.simpleIdentifier()?.let { simpleIdentifier ->
+                propertyName = simpleIdentifier.text
+            }
+            it.type()?.let { type ->
+                propertyType = getPropertyType(type)
+            }
         }
+        return if (propertyName != null && propertyType != null) {
+            AttributeDTO(propertyName!!, propertyType!!, AttributeType.FIELD)
+        } else {
+            null
+        }
+    }
+
+    private fun getPropertyType(it: KotlinParser.TypeContext): String? {
+        it.nullableType()?.let { nullableType ->
+            return nullableType.typeReference()?.text
+        }
+        it.typeReference()?.let { typeReference ->
+            return typeReference.text
+        }
+        return null
     }
 
     private fun parseFunctionDeclaration(functionDeclaration: KotlinParser.FunctionDeclarationContext): MethodDTO? {
@@ -81,7 +104,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         return methodDTO
     }
 
-    private fun parseFunctionParameter(functionValueParameter: KotlinParser.FunctionValueParameterContext?): ParameterDTO? {
+    private fun parseFunctionParameter(functionValueParameter: KotlinParser.FunctionValueParameterContext?): AttributeDTO? {
         var parameterName: String? = null
         var parameterType: String? = null
         functionValueParameter?.let {
@@ -93,7 +116,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             }
         }
         return if (parameterName != null && parameterType != null) {
-            ParameterDTO(parameterName!!, parameterType!!)
+            AttributeDTO(parameterName!!, parameterType!!, enums.AttributeType.PARAMETER)
         } else {
             null
         }
