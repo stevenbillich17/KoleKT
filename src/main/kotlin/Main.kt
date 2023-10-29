@@ -6,7 +6,9 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
 fun main(args: Array<String>) {
-    runBasicTest()
+    //runBasicTest()
+    val extractor = ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\testpackage")
+    extractor.parse()
 }
 
 fun runBasicTest() {
