@@ -10,6 +10,6 @@ class ClassDTO(private val className : String? = null) {
                 " className='$className',\n" +
                 " classPackage='$classPackage',\n" +
                 " classMethods=$classMethods, \n" +
-                " classFields=$classFields)}"
+                " classFields=$classFields\n)}"
     }
 }

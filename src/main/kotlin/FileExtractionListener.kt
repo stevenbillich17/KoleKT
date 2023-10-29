@@ -1,8 +1,7 @@
-import dtos.ClassDTO
-import dtos.FileDTO
-import dtos.MethodDTO
-import dtos.AttributeDTO
+import dtos.*
 import enums.AttributeType
+import listeners.MethodCallListener
+import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
@@ -15,7 +14,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         }
     }
 
-    override fun enterClassDeclaration(ctx: KotlinParser.ClassDeclarationContext?) {
+    override fun exitClassDeclaration(ctx: KotlinParser.ClassDeclarationContext?) {
         ctx?.let {
             if (fileDTO.filePackage == null) {
                 fileDTO.filePackage = "UNKNOWN"
@@ -53,11 +52,12 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             }
         } else if (declaration.propertyDeclaration() != null) {
             parsePropertyDeclaration(declaration.propertyDeclaration())?.let { attributeDTO ->
-                classDTO.classFields.add(attributeDTO) }
+                classDTO.classFields.add(attributeDTO)
+            }
         }
     }
 
-    private fun parsePropertyDeclaration(propertyDeclaration: KotlinParser.PropertyDeclarationContext) : AttributeDTO? {
+    private fun parsePropertyDeclaration(propertyDeclaration: KotlinParser.PropertyDeclarationContext): AttributeDTO? {
         var propertyName: String? = null
         var propertyType: String? = null
         propertyDeclaration.variableDeclaration()?.let {
@@ -92,16 +92,60 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         }
 
         methodDTO?.let {
-            functionDeclaration.functionValueParameters()?.functionValueParameter()
-                ?.forEach() { functionValueParameter ->
-                    run {
-                        parseFunctionParameter(functionValueParameter)?.let { parameter ->
-                            methodDTO!!.methodParameters.add(parameter)
-                        }
-                    }
-                }
+            parseAllFunctionParameters(functionDeclaration, methodDTO!!)
+            parseFunctionBody(functionDeclaration, methodDTO!!)
         }
         return methodDTO
+    }
+
+    private fun parseFunctionBody(functionDeclaration: KotlinParser.FunctionDeclarationContext, methodDTO: MethodDTO) {
+        functionDeclaration.functionBody()?.block()?.statements()?.statement()?.forEach { statementContext ->
+            statementContext?.let {
+                it.expression()?.let {expressionContext ->
+                    parseExpression(expressionContext)?.let { methodCallDTO ->
+                        methodDTO.methodCalls.add(methodCallDTO) }
+                }
+                it.declaration()?.let {declarationContext ->
+                    parseDeclaration(declarationContext)
+                }
+                it.assignment()?.let {assignmentContext ->
+                    println(assignmentContext.text)
+                }
+            }
+        }
+
+    }
+
+    private fun parseDeclaration(declarationContext: KotlinParser.DeclarationContext) {
+    }
+
+    private fun parseExpression(expressionContext: KotlinParser.ExpressionContext): MethodCallDTO? {
+        val parserTreeWalker = ParseTreeWalker()
+        val methodCallListener = MethodCallListener()
+        parserTreeWalker.walk(methodCallListener, expressionContext)
+
+        val name = methodCallListener.methodName
+        val arguments = methodCallListener.methodArguments
+
+        return if (name != null) {
+            MethodCallDTO(name, arguments)
+        } else
+            null
+
+    }
+
+    private fun parseAllFunctionParameters(
+        functionDeclaration: KotlinParser.FunctionDeclarationContext,
+        methodDTO: MethodDTO
+    ) {
+        functionDeclaration.functionValueParameters()?.functionValueParameter()
+            ?.forEach() { functionValueParameter ->
+                run {
+                    parseFunctionParameter(functionValueParameter)?.let { parameter ->
+                        methodDTO.methodParameters.add(parameter)
+                    }
+                }
+            }
     }
 
     private fun parseFunctionParameter(functionValueParameter: KotlinParser.FunctionValueParameterContext?): AttributeDTO? {
