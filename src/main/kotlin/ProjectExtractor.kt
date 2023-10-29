@@ -24,7 +24,7 @@ class ProjectExtractor(private val pathToProject: String) {
             try {
                 val file = File(filePath)
                 val tree = buildTreeFromFile(file)
-                val listener = FileExtractionListener(filePath)
+                val listener = FileExtractionListener(filePath, file.name)
 
                 val walker = ParseTreeWalker()
                 walker.walk(listener, tree)

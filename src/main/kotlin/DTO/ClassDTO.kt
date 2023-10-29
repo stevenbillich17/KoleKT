@@ -1,4 +1,4 @@
-package dto
+package DTO
 
 class ClassDTO(private val className : String? = null) {
     internal var classPackage : String? = null

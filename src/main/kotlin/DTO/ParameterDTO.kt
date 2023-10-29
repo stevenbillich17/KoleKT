@@ -1,4 +1,4 @@
-package dto
+package DTO
 
 data class ParameterDTO(val parameterName: String, val parameterType: String) {
     init {

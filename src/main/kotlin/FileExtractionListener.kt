@@ -1,12 +1,12 @@
-import dto.ClassDTO
-import dto.FileDTO
-import dto.MethodDTO
-import dto.ParameterDTO
+import DTO.ClassDTO
+import DTO.FileDTO
+import DTO.MethodDTO
+import DTO.ParameterDTO
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
-class FileExtractionListener(private val pathToFile: String) : KotlinParserBaseListener() {
-    private val fileDTO = FileDTO(pathToFile)
+class FileExtractionListener(private val pathToFile: String, private val name: String) : KotlinParserBaseListener() {
+    private val fileDTO = FileDTO(pathToFile, name)
     private val classesDTOs: MutableList<ClassDTO> = mutableListOf()
     override fun enterKotlinFile(ctx: KotlinParser.KotlinFileContext?) {
         ctx?.let {
@@ -56,7 +56,10 @@ class FileExtractionListener(private val pathToFile: String) : KotlinParserBaseL
     }
 
     private fun parsePropertyDeclaration(propertyDeclaration: KotlinParser.PropertyDeclarationContext) {
-        TODO("Not yet implemented")
+        var propertyName: String? = null
+        propertyDeclaration.propertyDelegate()?.let {
+            println(it.text)
+        }
     }
 
     private fun parseFunctionDeclaration(functionDeclaration: KotlinParser.FunctionDeclarationContext): MethodDTO? {

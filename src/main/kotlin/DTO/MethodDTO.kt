@@ -1,4 +1,4 @@
-package dto
+package DTO
 
 data class MethodDTO(val methodName: String) {
     val methodParameters: MutableList<ParameterDTO> = mutableListOf()
