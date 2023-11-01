@@ -1,4 +1,4 @@
-package org.dxworks.kolekt
+package org.dxworks.kolekt.extraction
 
 import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.listeners.MethodCallListener
@@ -116,10 +116,10 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                 }
             }
         }
-
     }
 
     private fun parseDeclaration(declarationContext: KotlinParser.DeclarationContext) {
+
     }
 
     private fun parseExpression(expressionContext: KotlinParser.ExpressionContext): MethodCallDTO? {
@@ -154,11 +154,12 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     private fun parseFunctionParameter(functionValueParameter: KotlinParser.FunctionValueParameterContext?): AttributeDTO? {
         var parameterName: String? = null
         var parameterType: String? = null
+
         functionValueParameter?.let {
             it.parameter()?.simpleIdentifier()?.let { parameterNameIdentifier ->
                 parameterName = parameterNameIdentifier.text
             }
-            it.parameter().type()?.typeReference()?.let { typeReference ->
+            it.parameter().type()?.let { typeReference ->
                 parameterType = typeReference.text
             }
         }
