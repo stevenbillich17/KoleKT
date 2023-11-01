@@ -1,3 +1,5 @@
+package org.dxworks.kolekt
+
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
@@ -7,7 +9,7 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
 fun main(args: Array<String>) {
     //runBasicTest()
-    val extractor = ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\testpackage")
+    val extractor = ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
     extractor.parse()
 }
 

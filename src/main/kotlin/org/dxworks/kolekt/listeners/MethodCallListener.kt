@@ -1,4 +1,4 @@
-package listeners
+package org.dxworks.kolekt.listeners
 
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
@@ -34,4 +34,8 @@ class MethodCallListener : KotlinParserBaseListener() {
             //primaryExpression().simpleIdentifier().text)
      */
 
+}
+
+fun bubu() : KotlinParser.KotlinFileContext? {
+    return null
 }

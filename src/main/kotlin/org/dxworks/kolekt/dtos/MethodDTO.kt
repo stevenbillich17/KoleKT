@@ -1,4 +1,4 @@
-package dtos
+package org.dxworks.kolekt.dtos
 
 data class MethodDTO(val methodName: String) {
     val methodParameters = mutableListOf<AttributeDTO>()

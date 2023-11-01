@@ -1,4 +1,4 @@
-package enums
+package org.dxworks.kolekt.enums
 
 enum class AttributeType {
     PARAMETER,

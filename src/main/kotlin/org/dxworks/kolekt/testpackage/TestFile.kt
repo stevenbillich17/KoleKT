@@ -1,4 +1,4 @@
-package testpackage
+package org.dxworks.kolekt.testpackage
 
 class TestClass(var age: Int, var name: String) {
     var address = "Default Address"

@@ -1,7 +1,9 @@
-import dtos.*
-import enums.AttributeType
-import listeners.MethodCallListener
+package org.dxworks.kolekt
+
+import org.dxworks.kolekt.enums.AttributeType
+import org.dxworks.kolekt.listeners.MethodCallListener
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.dtos.*
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
@@ -101,14 +103,15 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     private fun parseFunctionBody(functionDeclaration: KotlinParser.FunctionDeclarationContext, methodDTO: MethodDTO) {
         functionDeclaration.functionBody()?.block()?.statements()?.statement()?.forEach { statementContext ->
             statementContext?.let {
-                it.expression()?.let {expressionContext ->
+                it.expression()?.let { expressionContext ->
                     parseExpression(expressionContext)?.let { methodCallDTO ->
-                        methodDTO.methodCalls.add(methodCallDTO) }
+                        methodDTO.methodCalls.add(methodCallDTO)
+                    }
                 }
-                it.declaration()?.let {declarationContext ->
+                it.declaration()?.let { declarationContext ->
                     parseDeclaration(declarationContext)
                 }
-                it.assignment()?.let {assignmentContext ->
+                it.assignment()?.let { assignmentContext ->
                     println(assignmentContext.text)
                 }
             }
@@ -160,7 +163,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             }
         }
         return if (parameterName != null && parameterType != null) {
-            AttributeDTO(parameterName!!, parameterType!!, enums.AttributeType.PARAMETER)
+            AttributeDTO(parameterName!!, parameterType!!, AttributeType.PARAMETER)
         } else {
             null
         }
@@ -169,4 +172,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     fun getFileDTO(): Any {
         return fileDTO
     }
+}
+
+fun bubu(): KotlinParser.KotlinFileContext? {
+    return null
 }

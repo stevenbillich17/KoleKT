@@ -1,6 +1,6 @@
-package dtos
+package org.dxworks.kolekt.dtos
 
-import enums.AttributeType
+import org.dxworks.kolekt.enums.AttributeType
 
 data class AttributeDTO(val name: String, val type: String, val attributeType: AttributeType) {
     override fun toString(): String {

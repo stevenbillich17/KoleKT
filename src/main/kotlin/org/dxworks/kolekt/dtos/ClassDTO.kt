@@ -1,4 +1,4 @@
-package dtos
+package org.dxworks.kolekt.dtos
 
 class ClassDTO(private val className : String? = null) {
     internal var classPackage : String? = null
