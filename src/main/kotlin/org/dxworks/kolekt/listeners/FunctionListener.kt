@@ -68,6 +68,20 @@ class FunctionListener : KotlinParserBaseListener() {
         if (ctx == null || shouldStop) return
     }
 
+    override fun exitPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
+        if (ctx == null || shouldStop) return
+        if (ctx.variableDeclaration() != null) {
+            // we were inside a local variable declaration
+            val foundAttribute = AttributeDTO(
+                ctx.variableDeclaration().simpleIdentifier().text,
+                ctx.variableDeclaration().type()?.text ?: valueType,
+                AttributeType.LOCAL_VARIABLE
+            )
+            methodDTO!!.methodLocalVariables.add(foundAttribute)
+            println(foundAttribute)
+        }
+    }
+
     override fun enterVariableDeclaration(ctx: KotlinParser.VariableDeclarationContext?) {
         if (ctx == null || shouldStop) return
         insideVariableDeclaration = true
@@ -75,52 +89,28 @@ class FunctionListener : KotlinParserBaseListener() {
 
     override fun exitVariableDeclaration(ctx: KotlinParser.VariableDeclarationContext?) {
         if (ctx == null || shouldStop) return
-
         insideVariableDeclaration = false
-
-        if (insideFunctionBody && insideDeclaration) {
-            val foundAttribute = AttributeDTO(
-                ctx.simpleIdentifier().text,
-                ctx.type()?.text ?: tryToFindType(ctx.text),
-                AttributeType.LOCAL_VARIABLE
-            )
-            methodDTO!!.methodLocalVariables.add(foundAttribute)
-        }
     }
 
     override fun enterPrimaryExpression(ctx: KotlinParser.PrimaryExpressionContext?) {
+        if (ctx == null || shouldStop) return
         insidePrimaryExpression = true
+        if (insideFunctionBody && insideDeclaration) {
+            // special case for string literals
+            if (ctx.stringLiteral() != null) {
+                valueType = "String"
+            }
+        }
     }
 
     override fun exitPrimaryExpression(ctx: KotlinParser.PrimaryExpressionContext?) {
         insidePrimaryExpression = false
-        println("Primary expression: ${ctx?.text}")
-        if (ctx?.objectLiteral() != null) {
-            println("Object literal: ${ctx.objectLiteral().text}")
-        } else if (ctx?.literalConstant() != null) {
-            println("Literal constant: ${ctx.literalConstant().text}")
-        } else if (ctx?.callableReference() != null) {
-            println("Callable reference: ${ctx.callableReference().text}")
-        } else if (ctx?.collectionLiteral() != null) {
-            println("Collection literal: ${ctx.collectionLiteral().text}")
-        } else if (ctx?.functionLiteral() != null) {
-            println("Function literal: ${ctx.functionLiteral().text}")
-        } else if (ctx?.jumpExpression() != null) {
-            println("Jump expression: ${ctx.jumpExpression().text}")
-        } else if (ctx?.stringLiteral() != null) {
-            println("String literal: ${ctx.stringLiteral().text}")
-        }
     }
 
     override fun enterLiteralConstant(ctx: KotlinParser.LiteralConstantContext?) {
         if (ctx == null || shouldStop) return
-        valueType = "null"
-        println()
-        println("Literal constant: ${ctx.text}")
-        println("Inside function body: ${insideFunctionBody}")
-        println("Inside declaration: ${insideDeclaration}")
-        println("Inside primary expression: ${insidePrimaryExpression}")
-        if (insideFunctionBody && insideDeclaration && insidePrimaryExpression && insideVariableDeclaration) {
+        valueType = "unknown"
+        if (insideFunctionBody && insideDeclaration && insideVariableDeclaration && insidePrimaryExpression) {
             if (ctx.BinLiteral() != null) {
                 valueType = "Bin"
             } else if (ctx.BooleanLiteral() != null) {
@@ -141,8 +131,6 @@ class FunctionListener : KotlinParserBaseListener() {
                 valueType = "Long"
             }
         }
-        println("Inside literal constant: ${valueType}")
-        println()
     }
 
     private fun tryToFindType(text: String?): String {
