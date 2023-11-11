@@ -14,6 +14,7 @@ class TestClass(var age: Int, var name: String) {
 
     fun fun2(m1: String, m2: Double? = 5.0) {
         val x = "Hello"
+        val xTurbat = 5
         var y: String? = null
         val z = MalwareWriter()
         writeMalwareOutside("ceva" + "wow", "altceva")

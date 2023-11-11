@@ -110,7 +110,7 @@ class FunctionListener : KotlinParserBaseListener() {
     override fun enterLiteralConstant(ctx: KotlinParser.LiteralConstantContext?) {
         if (ctx == null || shouldStop) return
         valueType = "unknown"
-        if (insideFunctionBody && insideDeclaration && insideVariableDeclaration && insidePrimaryExpression) {
+        if (insideFunctionBody && insideDeclaration && insidePrimaryExpression) {
             if (ctx.BinLiteral() != null) {
                 valueType = "Bin"
             } else if (ctx.BooleanLiteral() != null) {
@@ -131,17 +131,5 @@ class FunctionListener : KotlinParserBaseListener() {
                 valueType = "Long"
             }
         }
-    }
-
-    private fun tryToFindType(text: String?): String {
-        var foundedType = "UNKNOWN"
-        currentDeclaration?.let {
-            val foundExpression = currentDeclaration?.propertyDeclaration()?.expression()
-            if (foundExpression != null) {
-                foundedType = foundExpression.text
-            }
-        }
-        //println("Founded type: $foundedType")
-        return foundedType
     }
 }
