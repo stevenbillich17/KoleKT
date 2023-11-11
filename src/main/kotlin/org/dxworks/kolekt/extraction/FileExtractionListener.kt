@@ -23,7 +23,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             }
             parseClassDeclaration(ctx)?.let { classDTO ->
                 classesDTOs.add(classDTO)
-                println(classDTO)
+                //println(classDTO)
             }
         }
     }
@@ -112,13 +112,14 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                     parseDeclaration(declarationContext)
                 }
                 it.assignment()?.let { assignmentContext ->
-                    println(assignmentContext.text)
+                    println("Assignment: ${assignmentContext.text}")
                 }
             }
         }
     }
 
     private fun parseDeclaration(declarationContext: KotlinParser.DeclarationContext) {
+        println("Declaration: ${declarationContext.text}")
 
     }
 

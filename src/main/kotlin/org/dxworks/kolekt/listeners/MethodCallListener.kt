@@ -22,6 +22,10 @@ class MethodCallListener : KotlinParserBaseListener() {
             }
         }
     }
+
+    override fun enterConstructorDelegationCall(ctx: KotlinParser.ConstructorDelegationCallContext?) {
+    }
+
     override fun enterValueArguments(ctx: KotlinParser.ValueArgumentsContext?) {
         enteredInArgumentList = true
     }
@@ -34,8 +38,4 @@ class MethodCallListener : KotlinParserBaseListener() {
             //primaryExpression().simpleIdentifier().text)
      */
 
-}
-
-fun bubu() : KotlinParser.KotlinFileContext? {
-    return null
 }
