@@ -1,10 +1,21 @@
 package org.dxworks.kolekt.dtos
 
 import org.dxworks.kolekt.enums.AttributeType
-import org.jetbrains.kotlin.spec.grammar.KotlinParser
 
 data class AttributeDTO(val name: String, val type: String, val attributeType: AttributeType) {
+
+    private var isSetByMethodCall = false
+    private var methodCallDTO: MethodCallDTO? = null
+    fun setByMethodCall(methodCallDTO: MethodCallDTO) {
+        this.methodCallDTO = methodCallDTO
+        isSetByMethodCall = true
+    }
+
     override fun toString(): String {
-        return "{AttributeDTO(parameterName='$name', parameterType='$type', attributeType='$attributeType'})"
+        var result = "AttributeDTO(parameterName='$name', parameterType='$type', attributeType='$attributeType'"
+        if(isSetByMethodCall) {
+           result = "$result, methodCallDTO=$methodCallDTO" 
+        }
+        return result
     }
 }
