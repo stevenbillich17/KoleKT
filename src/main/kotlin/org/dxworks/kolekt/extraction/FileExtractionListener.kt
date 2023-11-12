@@ -24,7 +24,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             }
             parseClassDeclaration(ctx)?.let { classDTO ->
                 classesDTOs.add(classDTO)
-                //println(classDTO)
+                println(classDTO)
             }
         }
     }

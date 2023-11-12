@@ -87,7 +87,7 @@ class FunctionListener : KotlinParserBaseListener() {
                 AttributeType.LOCAL_VARIABLE
             )
             methodDTO!!.methodLocalVariables.add(foundAttribute)
-            println(foundAttribute)
+            //println(foundAttribute)
         }
     }
 
@@ -154,7 +154,7 @@ class FunctionListener : KotlinParserBaseListener() {
         if (ctx == null || shouldStop) return
         insideCallSuffix = false
 
-        println(MethodCallDTO(calledMethodName, calledMethodParameters))
+        methodDTO!!.methodCalls.add(MethodCallDTO(calledMethodName, calledMethodParameters))
     }
 
     override fun enterValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
@@ -170,10 +170,10 @@ class FunctionListener : KotlinParserBaseListener() {
         insideValueArgument = false
     }
 
-    override fun enterCallableReference(ctx: KotlinParser.CallableReferenceContext?) {
-        if (ctx == null || shouldStop) return
-        println("Callable reference: ${ctx.text}")
-    }
+//    override fun enterCallableReference(ctx: KotlinParser.CallableReferenceContext?) {
+//        if (ctx == null || shouldStop) return
+//        println("Callable reference: ${ctx.text}")
+//    }
 
     override fun enterLiteralConstant(ctx: KotlinParser.LiteralConstantContext?) {
         if (ctx == null || shouldStop) return
