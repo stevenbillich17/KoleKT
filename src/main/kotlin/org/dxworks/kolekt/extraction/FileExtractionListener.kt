@@ -1,7 +1,6 @@
 package org.dxworks.kolekt.extraction
 
 import org.dxworks.kolekt.enums.AttributeType
-import org.dxworks.kolekt.listeners.MethodCallListener
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.dtos.*
 import org.dxworks.kolekt.listeners.FunctionListener
@@ -24,7 +23,6 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             }
             parseClassDeclaration(ctx)?.let { classDTO ->
                 classesDTOs.add(classDTO)
-                println(classDTO)
             }
         }
     }
@@ -92,94 +90,14 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         val parserTreeWalker = ParseTreeWalker()
         val functionListener = FunctionListener()
         parserTreeWalker.walk(functionListener, functionDeclaration)
-//        var methodDTO: MethodDTO? = null
-//        functionDeclaration.simpleIdentifier()?.let {
-//            methodDTO = MethodDTO(it.text)
-//        }
-//
-//        methodDTO?.let {
-//            parseAllFunctionParameters(functionDeclaration, methodDTO!!)
-//            parseFunctionBody(functionDeclaration, methodDTO!!)
-//        }
-//        return methodDTO
         return functionListener.methodDTO
     }
 
-    private fun parseFunctionBody(functionDeclaration: KotlinParser.FunctionDeclarationContext, methodDTO: MethodDTO) {
-        functionDeclaration.functionBody()?.block()?.statements()?.statement()?.forEach { statementContext ->
-            statementContext?.let {
-                it.expression()?.let { expressionContext ->
-                    parseExpression(expressionContext)?.let { methodCallDTO ->
-                        methodDTO.methodCalls.add(methodCallDTO)
-                    }
-                }
-                it.declaration()?.let { declarationContext ->
-                    parseDeclaration(declarationContext)
-                }
-                it.assignment()?.let { assignmentContext ->
-                    println("Assignment: ${assignmentContext.text}")
-                }
-            }
-        }
-    }
-
-    private fun parseDeclaration(declarationContext: KotlinParser.DeclarationContext) {
-        println("Declaration: ${declarationContext.text}")
-
-    }
-
-    private fun parseExpression(expressionContext: KotlinParser.ExpressionContext): MethodCallDTO? {
-        val parserTreeWalker = ParseTreeWalker()
-        val methodCallListener = MethodCallListener()
-        parserTreeWalker.walk(methodCallListener, expressionContext)
-
-        val name = methodCallListener.methodName
-        val arguments = methodCallListener.methodArguments
-
-        return if (name != null) {
-            MethodCallDTO(name, arguments)
-        } else
-            null
-    }
-
-    private fun parseAllFunctionParameters(
-        functionDeclaration: KotlinParser.FunctionDeclarationContext,
-        methodDTO: MethodDTO
-    ) {
-        functionDeclaration.functionValueParameters()?.functionValueParameter()
-            ?.forEach() { functionValueParameter ->
-                run {
-                    parseFunctionParameter(functionValueParameter)?.let { parameter ->
-                        methodDTO.methodParameters.add(parameter)
-                    }
-                }
-            }
-    }
-
-    private fun parseFunctionParameter(functionValueParameter: KotlinParser.FunctionValueParameterContext?): AttributeDTO? {
-        var parameterName: String? = null
-        var parameterType: String? = null
-
-        functionValueParameter?.let {
-            it.parameter()?.simpleIdentifier()?.let { parameterNameIdentifier ->
-                parameterName = parameterNameIdentifier.text
-            }
-            it.parameter().type()?.let { typeReference ->
-                parameterType = typeReference.text
-            }
-        }
-        return if (parameterName != null && parameterType != null) {
-            AttributeDTO(parameterName!!, parameterType!!, AttributeType.PARAMETER)
-        } else {
-            null
-        }
-    }
-
-    fun getFileDTO(): Any {
+    fun getFileDTO(): FileDTO {
         return fileDTO
     }
-}
 
-fun bubu(): KotlinParser.KotlinFileContext? {
-    return null
+    fun getClassesDTOs(): List<ClassDTO> {
+        return classesDTOs
+    }
 }
