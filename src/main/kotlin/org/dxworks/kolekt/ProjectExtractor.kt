@@ -26,6 +26,7 @@ class ProjectExtractor(private val pathToProject: String) {
     }
 
     private fun printDetailsFromFiles() {
+        println("\n\n----------FROM HERE ON, WE PRINT THE FILES DETAILS----------\n\n")
         filesDTOs.forEach { fileDTO ->
             println(fileDTO)
         }
