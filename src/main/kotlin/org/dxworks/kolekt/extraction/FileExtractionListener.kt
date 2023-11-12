@@ -27,6 +27,12 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         }
     }
 
+    override fun enterImportHeader(ctx: KotlinParser.ImportHeaderContext?) {
+        ctx?.let {
+            fileDTO.addImport(it.identifier().text)
+        }
+    }
+
     private fun parseClassDeclaration(ctx: KotlinParser.ClassDeclarationContext): ClassDTO? {
         if (ctx.simpleIdentifier() == null) {
             return null
