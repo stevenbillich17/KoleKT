@@ -51,12 +51,10 @@ class FunctionListener : KotlinParserBaseListener() {
     }
 
     override fun enterFunctionBody(ctx: KotlinParser.FunctionBodyContext?) {
-        //println("Enter function body:\n ${ctx?.text}\n")
         insideFunctionBody = true
     }
 
     override fun exitFunctionBody(ctx: KotlinParser.FunctionBodyContext?) {
-        //println("Exit function body:\n ${ctx?.text}\n")
         insideFunctionBody = false
     }
 
@@ -87,7 +85,6 @@ class FunctionListener : KotlinParserBaseListener() {
                 AttributeType.LOCAL_VARIABLE
             )
             methodDTO!!.methodLocalVariables.add(foundAttribute)
-            //println(foundAttribute)
         }
     }
 
@@ -104,9 +101,6 @@ class FunctionListener : KotlinParserBaseListener() {
     override fun enterExpression(ctx: KotlinParser.ExpressionContext?) {
         if (ctx == null || shouldStop) return
         insideExpression = true
-//        println("Expression: ${ctx.disjunction()?.conjunction()?.get(0)?.equality(0)?.comparison(0)?.infixOperation(0)?.elvisExpression(0)
-//            ?.infixFunctionCall(0)?.rangeExpression(0)?.additiveExpression(0)?.multiplicativeExpression(0)
-//            ?.asExpression(0)?.prefixUnaryExpression()?.postfixUnaryExpression()?.primaryExpression()?.text }")
     }
 
     override fun exitExpression(ctx: KotlinParser.ExpressionContext?) {
@@ -169,11 +163,6 @@ class FunctionListener : KotlinParserBaseListener() {
         if (ctx == null || shouldStop) return
         insideValueArgument = false
     }
-
-//    override fun enterCallableReference(ctx: KotlinParser.CallableReferenceContext?) {
-//        if (ctx == null || shouldStop) return
-//        println("Callable reference: ${ctx.text}")
-//    }
 
     override fun enterLiteralConstant(ctx: KotlinParser.LiteralConstantContext?) {
         if (ctx == null || shouldStop) return

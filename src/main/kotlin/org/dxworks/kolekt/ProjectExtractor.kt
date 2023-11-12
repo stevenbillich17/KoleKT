@@ -3,6 +3,7 @@ package org.dxworks.kolekt
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.dtos.FileDTO
 import org.dxworks.kolekt.extraction.FileExtractionListener
 import org.jetbrains.kotlin.spec.grammar.KotlinLexer
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
@@ -17,9 +18,17 @@ import kotlin.io.path.pathString
 class ProjectExtractor(private val pathToProject: String) {
     val kotlinExtension = ".kt"
     var pathToFiles: MutableList<String> = mutableListOf()
+    var filesDTOs: MutableList<FileDTO> = mutableListOf()
     fun parse() {
         readPathToFiles()
         parseFiles()
+        printDetailsFromFiles()
+    }
+
+    private fun printDetailsFromFiles() {
+        filesDTOs.forEach { fileDTO ->
+            println(fileDTO)
+        }
     }
 
     private fun parseFiles() {
@@ -32,8 +41,9 @@ class ProjectExtractor(private val pathToProject: String) {
                 val walker = ParseTreeWalker()
                 walker.walk(listener, tree)
 
-                val fileDTO = listener.getFileDTO();
-
+                val fileDTO = listener.getFileDTO()
+                fileDTO.addClasses(listener.getClassesDTOs())
+                filesDTOs.add(fileDTO)
 
             } catch (e : Exception) {
                 println("ERROR {$e}")
