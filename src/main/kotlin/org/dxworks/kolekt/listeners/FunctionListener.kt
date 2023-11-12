@@ -1,6 +1,7 @@
 package org.dxworks.kolekt.listeners
 
 import org.dxworks.kolekt.dtos.AttributeDTO
+import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.dtos.MethodDTO
 import org.dxworks.kolekt.enums.AttributeType
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
@@ -13,10 +14,18 @@ class FunctionListener : KotlinParserBaseListener() {
     private var insideFunctionBody = false
     private var insideDeclaration = false
     private var insideVariableDeclaration = false
+    private var insideExpression = false
+    private var insideInfixFunctionCall = false
     private var insidePrimaryExpression = false
+    private var insideCallSuffix = false
+    private var insideValueArgument = false
+    private var nameAlreadySetForMethod = false
 
     private var valueName = ""
     private var valueType = ""
+    private var calledMethodName = ""
+    private var calledMethodParameters = mutableListOf<String>()
+
 
     private var currentDeclaration: KotlinParser.DeclarationContext? = null
     override fun enterFunctionDeclaration(ctx: KotlinParser.FunctionDeclarationContext?) {
@@ -92,6 +101,31 @@ class FunctionListener : KotlinParserBaseListener() {
         insideVariableDeclaration = false
     }
 
+    override fun enterExpression(ctx: KotlinParser.ExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        insideExpression = true
+//        println("Expression: ${ctx.disjunction()?.conjunction()?.get(0)?.equality(0)?.comparison(0)?.infixOperation(0)?.elvisExpression(0)
+//            ?.infixFunctionCall(0)?.rangeExpression(0)?.additiveExpression(0)?.multiplicativeExpression(0)
+//            ?.asExpression(0)?.prefixUnaryExpression()?.postfixUnaryExpression()?.primaryExpression()?.text }")
+    }
+
+    override fun exitExpression(ctx: KotlinParser.ExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        insideExpression = false
+    }
+
+    override fun enterInfixFunctionCall(ctx: KotlinParser.InfixFunctionCallContext?) {
+        if (ctx == null || shouldStop) return
+        insideInfixFunctionCall = true
+        nameAlreadySetForMethod = false
+    }
+
+    override fun exitInfixFunctionCall(ctx: KotlinParser.InfixFunctionCallContext?) {
+        if (ctx == null || shouldStop) return
+        insideInfixFunctionCall = false
+        nameAlreadySetForMethod = false
+    }
+
     override fun enterPrimaryExpression(ctx: KotlinParser.PrimaryExpressionContext?) {
         if (ctx == null || shouldStop) return
         insidePrimaryExpression = true
@@ -101,10 +135,44 @@ class FunctionListener : KotlinParserBaseListener() {
                 valueType = "String"
             }
         }
+        if (!nameAlreadySetForMethod && !insideCallSuffix) {
+            calledMethodName = ctx.simpleIdentifier()?.text ?: "UNKNOWN"
+            nameAlreadySetForMethod = true
+        }
     }
 
     override fun exitPrimaryExpression(ctx: KotlinParser.PrimaryExpressionContext?) {
         insidePrimaryExpression = false
+    }
+
+    override fun enterCallSuffix(ctx: KotlinParser.CallSuffixContext?) {
+        if (ctx == null || shouldStop) return
+        insideCallSuffix = true
+    }
+
+    override fun exitCallSuffix(ctx: KotlinParser.CallSuffixContext?) {
+        if (ctx == null || shouldStop) return
+        insideCallSuffix = false
+
+        println(MethodCallDTO(calledMethodName, calledMethodParameters))
+    }
+
+    override fun enterValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
+        if (ctx == null || shouldStop) return
+        insideValueArgument = true
+        if (insideCallSuffix) {
+            calledMethodParameters.add(ctx.text)
+        }
+    }
+
+    override fun exitValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
+        if (ctx == null || shouldStop) return
+        insideValueArgument = false
+    }
+
+    override fun enterCallableReference(ctx: KotlinParser.CallableReferenceContext?) {
+        if (ctx == null || shouldStop) return
+        println("Callable reference: ${ctx.text}")
     }
 
     override fun enterLiteralConstant(ctx: KotlinParser.LiteralConstantContext?) {
