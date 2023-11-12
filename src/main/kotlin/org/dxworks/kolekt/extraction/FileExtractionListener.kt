@@ -1,9 +1,10 @@
-package org.dxworks.kolekt
+package org.dxworks.kolekt.extraction
 
 import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.listeners.MethodCallListener
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.dtos.*
+import org.dxworks.kolekt.listeners.FunctionListener
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
@@ -88,16 +89,20 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     private fun parseFunctionDeclaration(functionDeclaration: KotlinParser.FunctionDeclarationContext): MethodDTO? {
-        var methodDTO: MethodDTO? = null
-        functionDeclaration.simpleIdentifier()?.let {
-            methodDTO = MethodDTO(it.text)
-        }
-
-        methodDTO?.let {
-            parseAllFunctionParameters(functionDeclaration, methodDTO!!)
-            parseFunctionBody(functionDeclaration, methodDTO!!)
-        }
-        return methodDTO
+        val parserTreeWalker = ParseTreeWalker()
+        val functionListener = FunctionListener()
+        parserTreeWalker.walk(functionListener, functionDeclaration)
+//        var methodDTO: MethodDTO? = null
+//        functionDeclaration.simpleIdentifier()?.let {
+//            methodDTO = MethodDTO(it.text)
+//        }
+//
+//        methodDTO?.let {
+//            parseAllFunctionParameters(functionDeclaration, methodDTO!!)
+//            parseFunctionBody(functionDeclaration, methodDTO!!)
+//        }
+//        return methodDTO
+        return functionListener.methodDTO
     }
 
     private fun parseFunctionBody(functionDeclaration: KotlinParser.FunctionDeclarationContext, methodDTO: MethodDTO) {
@@ -112,14 +117,15 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                     parseDeclaration(declarationContext)
                 }
                 it.assignment()?.let { assignmentContext ->
-                    println(assignmentContext.text)
+                    println("Assignment: ${assignmentContext.text}")
                 }
             }
         }
-
     }
 
     private fun parseDeclaration(declarationContext: KotlinParser.DeclarationContext) {
+        println("Declaration: ${declarationContext.text}")
+
     }
 
     private fun parseExpression(expressionContext: KotlinParser.ExpressionContext): MethodCallDTO? {
@@ -134,7 +140,6 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             MethodCallDTO(name, arguments)
         } else
             null
-
     }
 
     private fun parseAllFunctionParameters(
@@ -154,11 +159,12 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     private fun parseFunctionParameter(functionValueParameter: KotlinParser.FunctionValueParameterContext?): AttributeDTO? {
         var parameterName: String? = null
         var parameterType: String? = null
+
         functionValueParameter?.let {
             it.parameter()?.simpleIdentifier()?.let { parameterNameIdentifier ->
                 parameterName = parameterNameIdentifier.text
             }
-            it.parameter().type()?.typeReference()?.let { typeReference ->
+            it.parameter().type()?.let { typeReference ->
                 parameterType = typeReference.text
             }
         }
