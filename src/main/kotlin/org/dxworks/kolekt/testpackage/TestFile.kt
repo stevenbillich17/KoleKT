@@ -7,6 +7,11 @@ class TestClass(var age: Int, var name: String) {
     var address = "Default Address"
     var phoneNumber: String? = null
     var height: Double = 5.0
+    var weight = getWeightValue()
+
+    private fun getWeightValue(): Double {
+        return 5.0
+    }
 
     fun callOutsideFunction(message: String) {
         outsideFunction()
