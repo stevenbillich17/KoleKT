@@ -11,6 +11,8 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 class FileExtractionListener(private val pathToFile: String, private val name: String) : KotlinParserBaseListener() {
     private val fileDTO = FileDTO(pathToFile, name)
     private val classesDTOs: MutableList<ClassDTO> = mutableListOf()
+
+    private var insideClassDeclaration: Boolean = false
     override fun enterKotlinFile(ctx: KotlinParser.KotlinFileContext?) {
         ctx?.let {
             fileDTO.filePackage = it.packageHeader().identifier().text
@@ -26,11 +28,32 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                 classesDTOs.add(classDTO)
             }
         }
+        insideClassDeclaration = false
     }
 
     override fun enterImportHeader(ctx: KotlinParser.ImportHeaderContext?) {
         ctx?.let {
             fileDTO.addImport(it.identifier().text)
+        }
+    }
+
+    override fun enterClassDeclaration(ctx: KotlinParser.ClassDeclarationContext?) {
+        if (ctx == null) {
+            return
+        }
+        insideClassDeclaration = true
+    }
+
+    override fun enterFunctionDeclaration(ctx: KotlinParser.FunctionDeclarationContext?) {
+        if (ctx == null) {
+            return
+        }
+        if (insideClassDeclaration) {
+            return
+        }
+
+        parseFunctionDeclaration(ctx)?.let { methodDTO ->
+            fileDTO.functions.add(methodDTO)
         }
     }
 
