@@ -10,7 +10,6 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 class FunctionListener : KotlinParserBaseListener() {
     var methodDTO: MethodDTO? = null
     private var shouldStop = false
-
     private var insideFunctionBody = false
     private var insidePropertyDeclaration = false
     private var insideDeclaration = false
@@ -20,16 +19,25 @@ class FunctionListener : KotlinParserBaseListener() {
     private var insidePrimaryExpression = false
     private var insideCallSuffix = false
     private var insideValueArgument = false
+    private var insideAdditiveExpression = false
+    private var insideMultiplicativeExpression = false
+    private var insideAsExpression = false
+    private var insidePrefixUnaryExpression = false
+    private var insidePostfixUnaryExpression = false
+    private var insidePostFixUnarySuffix = false
+    private var insideNavigationSuffix = false
+
     private var nameAlreadySetForMethod = false
     private var wasThereAnCallSuffix = false
-
     private var wasThereAnInfixFunctionCall = false
-    private var valueName = ""
+    private var wasThereAnNavigationSuffix = false
 
+    private var valueName = ""
+    private var referenceName: String? = ""
     private var valueType = ""
     private var calledMethodName = ""
     private var calledMethodParameters = mutableListOf<String>()
-    private var lastCallSufixMethodCall: MethodCallDTO? = null
+    private var lastCallSuffixMethodCall: MethodCallDTO? = null
 
 
     private var currentDeclaration: KotlinParser.DeclarationContext? = null
@@ -99,7 +107,7 @@ class FunctionListener : KotlinParserBaseListener() {
             )
 
             if (tempType == "null" && wasThereAnCallSuffix && wasThereAnInfixFunctionCall) {
-                foundAttribute.setByMethodCall(lastCallSufixMethodCall!!)
+                foundAttribute.setByMethodCall(lastCallSuffixMethodCall!!)
             }
 
             methodDTO!!.methodLocalVariables.add(foundAttribute)
@@ -159,6 +167,9 @@ class FunctionListener : KotlinParserBaseListener() {
             calledMethodName = ctx.simpleIdentifier()?.text ?: "UNKNOWN"
             nameAlreadySetForMethod = true
         }
+        if (insideInfixFunctionCall && insideAdditiveExpression && insidePostfixUnaryExpression && !insideCallSuffix) {
+            referenceName = ctx.simpleIdentifier()?.text
+        }
     }
 
     override fun exitPrimaryExpression(ctx: KotlinParser.PrimaryExpressionContext?) {
@@ -166,9 +177,98 @@ class FunctionListener : KotlinParserBaseListener() {
         insidePrimaryExpression = false
     }
 
+
+    override fun enterAdditiveExpression(ctx: KotlinParser.AdditiveExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Additive expression: ${ctx.text}")
+        insideAdditiveExpression = true
+    }
+
+    override fun exitAdditiveExpression(ctx: KotlinParser.AdditiveExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Exiting additive expression: ${ctx.text}")
+        insideAdditiveExpression = false
+    }
+
+    override fun enterMultiplicativeExpression(ctx: KotlinParser.MultiplicativeExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Multiplicative expression: ${ctx.text}")
+        insideMultiplicativeExpression = true
+    }
+
+    override fun exitMultiplicativeExpression(ctx: KotlinParser.MultiplicativeExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Exiting multiplicative expression: ${ctx.text}")
+        insideMultiplicativeExpression = false
+    }
+
+    override fun enterAsExpression(ctx: KotlinParser.AsExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        println("As expression: ${ctx.text}")
+        insideAsExpression = true
+    }
+
+    override fun exitAsExpression(ctx: KotlinParser.AsExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        println("Exiting as expression: ${ctx.text}")
+        insideAsExpression = false
+    }
+
+    override fun enterPrefixUnaryExpression(ctx: KotlinParser.PrefixUnaryExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Prefix unary expression: ${ctx.text}")
+        insidePrefixUnaryExpression = true
+    }
+
+    override fun exitPrefixUnaryExpression(ctx: KotlinParser.PrefixUnaryExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Exiting prefix unary expression: ${ctx.text}")
+        insidePrefixUnaryExpression = false
+    }
+
+    override fun enterPostfixUnaryExpression(ctx: KotlinParser.PostfixUnaryExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Postfix unary expression: ${ctx.text}")
+        insidePostfixUnaryExpression = true
+    }
+
+    override fun exitPostfixUnaryExpression(ctx: KotlinParser.PostfixUnaryExpressionContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Exiting postfix unary expression: ${ctx.text}")
+        insidePostfixUnaryExpression = false
+    }
+
+    override fun enterPostfixUnarySuffix(ctx: KotlinParser.PostfixUnarySuffixContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Postfix unary suffix: ${ctx.text}")
+        insidePostFixUnarySuffix = true
+    }
+
+    override fun exitPostfixUnarySuffix(ctx: KotlinParser.PostfixUnarySuffixContext?) {
+        if (ctx == null || shouldStop) return
+        //println("Exiting postfix unary suffix: ${ctx.text}")
+        insidePostFixUnarySuffix = false
+    }
+
+    override fun enterNavigationSuffix(ctx: KotlinParser.NavigationSuffixContext?) {
+        if (ctx == null || shouldStop) return
+        println("Navigation suffix: ${ctx.text}")
+        insideNavigationSuffix = true
+        wasThereAnNavigationSuffix = true
+        if (insideInfixFunctionCall && insideAdditiveExpression && insidePostFixUnarySuffix && ctx.memberAccessOperator() != null) {
+            calledMethodName = ctx.simpleIdentifier().text
+        }
+    }
+
+    override fun exitNavigationSuffix(ctx: KotlinParser.NavigationSuffixContext?) {
+        if (ctx == null || shouldStop) return
+        println("Exiting navigation suffix: ${ctx.text}")
+        insideNavigationSuffix = false
+    }
+
     override fun enterCallSuffix(ctx: KotlinParser.CallSuffixContext?) {
         if (ctx == null || shouldStop) return
-        println("Call suffix: ${ctx.text}")
+        println("Enter call suffix: ${ctx.text}")
         insideCallSuffix = true
         wasThereAnCallSuffix = true
     }
@@ -179,12 +279,20 @@ class FunctionListener : KotlinParserBaseListener() {
         insideCallSuffix = false
 
         // add new call
-        lastCallSufixMethodCall = MethodCallDTO(calledMethodName, calledMethodParameters)
-        methodDTO!!.methodCalls.add(lastCallSufixMethodCall!!)
-
+        if (!wasThereAnNavigationSuffix) {
+            lastCallSuffixMethodCall = MethodCallDTO(calledMethodName, calledMethodParameters)
+            methodDTO!!.methodCalls.add(lastCallSuffixMethodCall!!)
+        } else {
+            // add new call to the last call
+            lastCallSuffixMethodCall = MethodCallDTO(calledMethodName, calledMethodParameters)
+            lastCallSuffixMethodCall!!.addReference(referenceName!!)
+            methodDTO!!.methodCalls.add(lastCallSuffixMethodCall!!)
+        }
         // reset parameters
         calledMethodName = ""
         calledMethodParameters = mutableListOf()
+        referenceName = ""
+        wasThereAnNavigationSuffix = false
 
     }
 

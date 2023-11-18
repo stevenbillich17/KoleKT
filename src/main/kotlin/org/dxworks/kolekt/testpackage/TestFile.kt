@@ -22,6 +22,8 @@ class TestClass(var age: Int, var name: String) {
         val xTurbat = 5
         var y: String? = null
         val z = MalwareWriter()
+        z.writeMalware()
+        z.writeMalwareWithParameters("ceva", "altceva")
         writeMalwareOutside("ceva" + "wow", "altceva")
     }
 }
