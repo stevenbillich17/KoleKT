@@ -12,10 +12,11 @@ data class AttributeDTO(val name: String, val type: String, val attributeType: A
     }
 
     override fun toString(): String {
-        var result = "AttributeDTO(parameterName='$name', parameterType='$type', attributeType='$attributeType'"
+        var result = "AttributeDTO(name='$name', type='$type', attributeType='$attributeType'"
         if(isSetByMethodCall) {
            result = "$result, methodCallDTO=$methodCallDTO" 
         }
+        result = "$result)"
         return result
     }
 }

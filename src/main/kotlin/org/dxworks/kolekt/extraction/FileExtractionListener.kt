@@ -3,6 +3,7 @@ package org.dxworks.kolekt.extraction
 import org.dxworks.kolekt.enums.AttributeType
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.dtos.*
+import org.dxworks.kolekt.listeners.FieldListener
 import org.dxworks.kolekt.listeners.FunctionListener
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
@@ -65,21 +66,26 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     private fun parsePropertyDeclaration(propertyDeclaration: KotlinParser.PropertyDeclarationContext): AttributeDTO? {
-        var propertyName: String? = null
-        var propertyType: String? = null
-        propertyDeclaration.variableDeclaration()?.let {
-            it.simpleIdentifier()?.let { simpleIdentifier ->
-                propertyName = simpleIdentifier.text
-            }
-            it.type()?.let { type ->
-                propertyType = getPropertyType(type)
-            }
-        }
-        return if (propertyName != null && propertyType != null) {
-            AttributeDTO(propertyName!!, propertyType!!, AttributeType.FIELD)
-        } else {
-            null
-        }
+        val parserTreeWalker = ParseTreeWalker()
+        val functionListener = FieldListener()
+        parserTreeWalker.walk(functionListener, propertyDeclaration)
+        return functionListener.attributeDTO
+
+//        var propertyName: String? = null
+//        var propertyType: String? = null
+//        propertyDeclaration.variableDeclaration()?.let {
+//            it.simpleIdentifier()?.let { simpleIdentifier ->
+//                propertyName = simpleIdentifier.text
+//            }
+//            it.type()?.let { type ->
+//                propertyType = getPropertyType(type)
+//            }
+//        }
+//        return if (propertyName != null && propertyType != null) {
+//            AttributeDTO(propertyName!!, propertyType!!, AttributeType.FIELD)
+//        } else {
+//            null
+//        }
     }
 
     private fun getPropertyType(it: KotlinParser.TypeContext): String? {
