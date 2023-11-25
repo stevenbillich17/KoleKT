@@ -12,4 +12,11 @@ class ClassDTO(private val className : String? = null) {
                 " classMethods=$classMethods, \n" +
                 " classFields=$classFields\n)}"
     }
+
+    fun addField(field: AttributeDTO?) {
+        println("Adding fields: $field")
+        field?.let {
+            classFields.add(it)
+        }
+    }
 }

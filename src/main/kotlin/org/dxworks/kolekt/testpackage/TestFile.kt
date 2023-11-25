@@ -13,12 +13,17 @@ class TestClass(var age: Int, var name: String) {
         return 5.0
     }
 
+    constructor(address: String, nothing: Int, name: String, anotherInt: Int ) : this(nothing, name) {
+        this.address = address
+    }
+
     fun callOutsideFunction(message: String) {
         outsideFunction()
     }
 
     fun fun2(m1: String, m2: Double? = 5.0) {
         val x = "Hello"
+
         val xTurbat = 5
         var y: String? = null
         val z = MalwareWriter()
