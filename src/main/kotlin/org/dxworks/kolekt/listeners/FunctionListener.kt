@@ -26,6 +26,7 @@ class FunctionListener : KotlinParserBaseListener() {
     private var insidePostfixUnaryExpression = false
     private var insidePostFixUnarySuffix = false
     private var insideNavigationSuffix = false
+    private var insideFunctionParameters = false
 
     private var nameAlreadySetForMethod = false
     private var wasThereAnCallSuffix = false
@@ -46,8 +47,24 @@ class FunctionListener : KotlinParserBaseListener() {
             shouldStop = true
             return
         }
-
         methodDTO = MethodDTO(ctx.simpleIdentifier().text)
+    }
+
+    override fun enterType(ctx: KotlinParser.TypeContext?) {
+        if (ctx == null || shouldStop) return
+        if (!insideFunctionBody && !insideFunctionParameters) {
+            methodDTO!!.setMethodReturnType(ctx.text)
+        }
+    }
+
+    override fun enterFunctionValueParameters(ctx: KotlinParser.FunctionValueParametersContext?) {
+        if (ctx == null || shouldStop) return
+        insideFunctionParameters = true
+    }
+
+    override fun exitFunctionValueParameters(ctx: KotlinParser.FunctionValueParametersContext?) {
+        if (ctx == null || shouldStop) return
+        insideFunctionParameters = false
     }
 
     override fun enterFunctionValueParameter(ctx: KotlinParser.FunctionValueParameterContext?) {
@@ -59,7 +76,6 @@ class FunctionListener : KotlinParserBaseListener() {
             parameterFromCtx.type().text,
             AttributeType.PARAMETER
         )
-
         methodDTO!!.methodParameters.add(foundParameter)
     }
 
