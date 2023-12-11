@@ -1,6 +1,7 @@
 package org.dxworks.kolekt.extraction
 
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.context.ParsingContext
 import org.dxworks.kolekt.dtos.*
 import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.listeners.FieldListener
@@ -10,13 +11,8 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
 class FileExtractionListener(private val pathToFile: String, private val name: String) : KotlinParserBaseListener() {
     private val fileDTO = FileDTO(pathToFile, name)
-    private val classesDTOs: MutableList<ClassDTO> = mutableListOf()
-
-    private var insidePrimaryConstructor = false
-
-    private var mutableListOfClassParameters = mutableListOf<AttributeDTO>()
-
-    private var insideClassDeclaration: Boolean = false
+    private val parsingContext = ParsingContext()
+    
     override fun enterKotlinFile(ctx: KotlinParser.KotlinFileContext?) {
         ctx?.let {
             fileDTO.filePackage = it.packageHeader().identifier().text
@@ -27,11 +23,11 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         if (ctx == null) {
             return
         }
-        insidePrimaryConstructor = true
+        parsingContext.insidePrimaryConstructor = true
     }
 
     override fun exitPrimaryConstructor(ctx: KotlinParser.PrimaryConstructorContext?) {
-        insidePrimaryConstructor = false
+        parsingContext.insidePrimaryConstructor = false
     }
 
 
@@ -50,7 +46,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         if (name == null || type == null) {
             return
         }
-        mutableListOfClassParameters.add(AttributeDTO(
+        parsingContext.mutableListOfClassParameters.add(AttributeDTO(
             name,
             type,
             AttributeType.FIELD
@@ -70,10 +66,10 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                 fileDTO.filePackage = "UNKNOWN"
             }
             parseClassDeclaration(ctx)?.let { classDTO ->
-                classesDTOs.add(classDTO)
+                parsingContext.classesDTOs.add(classDTO)
             }
         }
-        insideClassDeclaration = false
+        parsingContext.insideClassDeclaration = false
     }
 
     override fun enterImportHeader(ctx: KotlinParser.ImportHeaderContext?) {
@@ -86,14 +82,14 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         if (ctx == null) {
             return
         }
-        insideClassDeclaration = true
+        parsingContext.insideClassDeclaration = true
     }
 
     override fun enterFunctionDeclaration(ctx: KotlinParser.FunctionDeclarationContext?) {
         if (ctx == null) {
             return
         }
-        if (insideClassDeclaration) {
+        if (parsingContext.insideClassDeclaration) {
             return
         }
 
@@ -163,6 +159,6 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     fun getClassesDTOs(): List<ClassDTO> {
-        return classesDTOs
+        return parsingContext.classesDTOs
     }
 }
