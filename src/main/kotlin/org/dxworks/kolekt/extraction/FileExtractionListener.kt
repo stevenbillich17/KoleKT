@@ -1,8 +1,8 @@
 package org.dxworks.kolekt.extraction
 
-import org.dxworks.kolekt.enums.AttributeType
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.dtos.*
+import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.listeners.FieldListener
 import org.dxworks.kolekt.listeners.FunctionListener
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
@@ -12,11 +12,56 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     private val fileDTO = FileDTO(pathToFile, name)
     private val classesDTOs: MutableList<ClassDTO> = mutableListOf()
 
+    private var insidePrimaryConstructor = false
+
+    private var mutableListOfClassParameters = mutableListOf<AttributeDTO>()
+
     private var insideClassDeclaration: Boolean = false
     override fun enterKotlinFile(ctx: KotlinParser.KotlinFileContext?) {
         ctx?.let {
             fileDTO.filePackage = it.packageHeader().identifier().text
         }
+    }
+
+    override fun enterPrimaryConstructor(ctx: KotlinParser.PrimaryConstructorContext?) {
+        if (ctx == null) {
+            return
+        }
+        insidePrimaryConstructor = true
+    }
+
+    override fun exitPrimaryConstructor(ctx: KotlinParser.PrimaryConstructorContext?) {
+        insidePrimaryConstructor = false
+    }
+
+
+    override fun enterClassParameter(ctx: KotlinParser.ClassParameterContext?) {
+        if (ctx == null) {
+            return
+        }
+        var name: String? = null
+        var type: String? = null
+        ctx.type()?.let {
+            println("Class parameter type: ${it.text}")
+        }
+        ctx.simpleIdentifier()?.let {
+            println("Class parameter name: ${it.text}")
+        }
+        if (name == null || type == null) {
+            return
+        }
+        mutableListOfClassParameters.add(AttributeDTO(
+            name,
+            type,
+            AttributeType.FIELD
+        ))
+    }
+
+    override fun enterFunctionValueParameters(ctx: KotlinParser.FunctionValueParametersContext?) {
+        if (ctx == null) {
+            return
+        }
+        println("Function value parameters: ${ctx.text}")
     }
 
     override fun exitClassDeclaration(ctx: KotlinParser.ClassDeclarationContext?) {
@@ -63,6 +108,17 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         }
         val classDTO = ClassDTO(ctx.simpleIdentifier().text)
         classDTO.classPackage = fileDTO.filePackage
+
+        ctx.primaryConstructor()?.classParameters()?.classParameter()?.forEach() { classParameter ->
+            run {
+                val field = AttributeDTO(
+                    classParameter.simpleIdentifier().text,
+                    classParameter.type().text,
+                    AttributeType.FIELD
+                )
+                classDTO.addField(field)
+            }
+        }
         ctx.classBody()?.let { classBody ->
             classBody.classMemberDeclarations().classMemberDeclaration().forEach { classMemberDeclaration ->
                 run {
@@ -93,16 +149,6 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         val functionListener = FieldListener()
         parserTreeWalker.walk(functionListener, propertyDeclaration)
         return functionListener.attributeDTO
-    }
-
-    private fun getPropertyType(it: KotlinParser.TypeContext): String? {
-        it.nullableType()?.let { nullableType ->
-            return nullableType.typeReference()?.text
-        }
-        it.typeReference()?.let { typeReference ->
-            return typeReference.text
-        }
-        return null
     }
 
     private fun parseFunctionDeclaration(functionDeclaration: KotlinParser.FunctionDeclarationContext): MethodDTO? {
