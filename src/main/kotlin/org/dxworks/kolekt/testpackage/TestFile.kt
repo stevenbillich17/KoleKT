@@ -17,7 +17,6 @@ class TestClass(var age: Int, var name: String) {
         this.address = address
     }
 
-
     @Deprecated("Use the other constructor")
     fun callOutsideFunction(message: String) {
         outsideFunction()

@@ -70,13 +70,13 @@ class FunctionListener : KotlinParserBaseListener() {
 
     override fun enterSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
         if (ctx == null || shouldStop) return
-        print("Single annotation: ${ctx.text}")
+        println("Single annotation: ${ctx.text}")
         insideSingleAnnotation = true
     }
 
     override fun exitSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
         if (ctx == null || shouldStop) return
-        print("Exiting single annotation: ${ctx.text}")
+        println("Exiting single annotation: ${ctx.text}")
         insideSingleAnnotation = false
         // function annotation is outside the function body
         if (!insideFunctionBody) {
@@ -105,7 +105,7 @@ class FunctionListener : KotlinParserBaseListener() {
         println("User type: ${ctx.text}")
 
         insideUserType = true
-        if (insideConstructorInvocation && insideSingleAnnotation) {
+        if (insideSingleAnnotation) {
             annotationName = ctx.text
         }
     }
