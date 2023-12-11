@@ -1,5 +1,6 @@
 package org.dxworks.kolekt.listeners
 
+import org.dxworks.kolekt.dtos.AnnotationDTO
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.dtos.MethodDTO
@@ -27,6 +28,10 @@ class FunctionListener : KotlinParserBaseListener() {
     private var insidePostFixUnarySuffix = false
     private var insideNavigationSuffix = false
     private var insideFunctionParameters = false
+    private var insideAnnotation = false
+    private var insideSingleAnnotation = false
+    private var insideUserType = false
+    private var insideConstructorInvocation = false
 
     private var nameAlreadySetForMethod = false
     private var wasThereAnCallSuffix = false
@@ -39,6 +44,8 @@ class FunctionListener : KotlinParserBaseListener() {
     private var calledMethodName = ""
     private var calledMethodParameters = mutableListOf<String>()
     private var lastCallSuffixMethodCall: MethodCallDTO? = null
+    private var annotationArguments = mutableListOf<String>()
+    private var annotationName = ""
 
 
     private var currentDeclaration: KotlinParser.DeclarationContext? = null
@@ -48,6 +55,66 @@ class FunctionListener : KotlinParserBaseListener() {
             return
         }
         methodDTO = MethodDTO(ctx.simpleIdentifier().text)
+    }
+
+    override fun enterAnnotation(ctx: KotlinParser.AnnotationContext?) {
+        if (ctx == null || shouldStop) return
+        print("Annotation: ${ctx.text}")
+        insideAnnotation = true
+    }
+
+    override fun exitAnnotation(ctx: KotlinParser.AnnotationContext?) {
+        if (ctx == null || shouldStop) return
+        insideAnnotation = false
+    }
+
+    override fun enterSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
+        if (ctx == null || shouldStop) return
+        println("Single annotation: ${ctx.text}")
+        insideSingleAnnotation = true
+    }
+
+    override fun exitSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
+        if (ctx == null || shouldStop) return
+        println("Exiting single annotation: ${ctx.text}")
+        insideSingleAnnotation = false
+        // function annotation is outside the function body
+        if (!insideFunctionBody) {
+            val singleAnnotation = AnnotationDTO(annotationName)
+            singleAnnotation.addAnnotationArguments(annotationArguments)
+            methodDTO!!.addAnnotation(singleAnnotation)
+        }
+    }
+
+    override fun enterConstructorInvocation(ctx: KotlinParser.ConstructorInvocationContext?) {
+        if (ctx == null || shouldStop) return
+        println("Constructor invocation: ${ctx.text}")
+
+        insideConstructorInvocation = true
+    }
+
+    override fun exitConstructorInvocation(ctx: KotlinParser.ConstructorInvocationContext?) {
+        if (ctx == null || shouldStop) return
+        println("Exiting constructor invocation: ${ctx.text}")
+
+        insideConstructorInvocation = false
+    }
+
+    override fun enterUserType(ctx: KotlinParser.UserTypeContext?) {
+        if (ctx == null || shouldStop) return
+        println("User type: ${ctx.text}")
+
+        insideUserType = true
+        if (insideSingleAnnotation) {
+            annotationName = ctx.text
+        }
+    }
+
+    override fun exitUserType(ctx: KotlinParser.UserTypeContext?) {
+        if (ctx == null || shouldStop) return
+        println("Exiting user type: ${ctx.text}")
+
+        insideUserType = false
     }
 
     override fun enterType(ctx: KotlinParser.TypeContext?) {
@@ -318,6 +385,9 @@ class FunctionListener : KotlinParserBaseListener() {
         insideValueArgument = true
         if (insideCallSuffix) {
             calledMethodParameters.add(ctx.text)
+        }
+        if (insideAnnotation) {
+            annotationArguments.add(ctx.text)
         }
     }
 
