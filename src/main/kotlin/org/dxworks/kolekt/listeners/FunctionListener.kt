@@ -22,6 +22,7 @@ class FunctionListener : KotlinParserBaseListener() {
             parsingContext.shouldStop = true
             return
         }
+        logger.trace("Function declaration: ${ctx.simpleIdentifier().text}")
         methodDTO = MethodDTO(ctx.simpleIdentifier().text)
     }
 
@@ -54,6 +55,20 @@ class FunctionListener : KotlinParserBaseListener() {
             logger.debug("Adding function annotation: {}", singleAnnotation)
             methodDTO!!.addAnnotation(singleAnnotation)
         }
+    }
+
+    override fun enterModifier(ctx: KotlinParser.ModifierContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        logger.trace("Modifier: ${ctx.text}")
+        methodDTO!!.addModifier(ctx.text)
+        parsingContext.insideModifier = true
+    }
+
+    override fun exitModifier(ctx: KotlinParser.ModifierContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        logger.trace("Exiting modifier: ${ctx.text}")
+
+        parsingContext.insideModifier = false
     }
 
     override fun enterConstructorInvocation(ctx: KotlinParser.ConstructorInvocationContext?) {

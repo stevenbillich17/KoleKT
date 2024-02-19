@@ -41,12 +41,12 @@ class ProjectExtractor(private val pathToProject: String) {
         val progressPercentage = (progress.toFloat() / total.toFloat())
         val progressChars = (progressPercentage * progressBarLength).toInt()
         val progressBar = "=".repeat(progressChars) + " ".repeat(progressBarLength - progressChars)
-        print("\r[$progressBar] ${String.format("%.2f", progressPercentage * 100)}%")
+        logger.error("\r[$progressBar] ${String.format("%.2f", progressPercentage * 100)}%")
     }
 
     private fun parseFiles() {
         val total  = pathToFiles.size
-        print("\r[]0%")
+        logger.error("\r[]0%")
         for (i in 0..<total) {
             val filePath = pathToFiles[i]
             try {
