@@ -47,6 +47,7 @@ class FunctionListener : KotlinParserBaseListener() {
         if (!parsingContext.insideFunctionBody) {
             val singleAnnotation = AnnotationDTO(parsingContext.annotationName)
             singleAnnotation.addAnnotationArguments(parsingContext.annotationArguments)
+            parsingContext.annotationArguments.clear()
             methodDTO!!.addAnnotation(singleAnnotation)
         }
     }

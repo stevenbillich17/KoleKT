@@ -1,5 +1,6 @@
 package org.dxworks.kolekt.context
 
+import org.dxworks.kolekt.dtos.AnnotationDTO
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
@@ -31,6 +32,10 @@ class ParsingContext {
     var insidePrimaryConstructor: Boolean = false
     var insideSimpleIdentifier: Boolean = false
     var containsColon: Boolean = false
+    var insideClassMemberDeclaration: Boolean = false
+    var insideFunctionDeclaration: Boolean = false
+    var insideFieldDeclaration: Boolean = false
+    var insideClassBody: Boolean = false
 
     var nameAlreadySetForMethod: Boolean = false
     var wasThereAnCallSuffix: Boolean = false
@@ -46,6 +51,8 @@ class ParsingContext {
     var annotationArguments = mutableListOf<String>()
     var annotationName = ""
 
+    var classDTO: ClassDTO? = null
     val classesDTOs: MutableList<ClassDTO> = mutableListOf()
     var mutableListOfClassParameters = mutableListOf<AttributeDTO>()
+    var mutableListOfAnnotations = mutableListOf<AnnotationDTO>()
 }

@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 class FileExtractionListener(private val pathToFile: String, private val name: String) : KotlinParserBaseListener() {
     private val fileDTO = FileDTO(pathToFile, name)
     private val parsingContext = ParsingContext()
+    val className = ""
     
     override fun enterKotlinFile(ctx: KotlinParser.KotlinFileContext?) {
         ctx?.let {
@@ -60,18 +61,6 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         println("Function value parameters: ${ctx.text}")
     }
 
-    override fun exitClassDeclaration(ctx: KotlinParser.ClassDeclarationContext?) {
-        ctx?.let {
-            if (fileDTO.filePackage == null) {
-                fileDTO.filePackage = "UNKNOWN"
-            }
-            parseClassDeclaration(ctx)?.let { classDTO ->
-                parsingContext.classesDTOs.add(classDTO)
-            }
-        }
-        parsingContext.insideClassDeclaration = false
-    }
-
     override fun enterImportHeader(ctx: KotlinParser.ImportHeaderContext?) {
         ctx?.let {
             fileDTO.addImport(it.identifier().text)
@@ -82,75 +71,215 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         if (ctx == null) {
             return
         }
+        parsingContext.classDTO =  ClassDTO(ctx.simpleIdentifier().text)
+        parsingContext.classDTO!!.classPackage = fileDTO.filePackage
         parsingContext.insideClassDeclaration = true
     }
 
+    override fun exitClassDeclaration(ctx: KotlinParser.ClassDeclarationContext?) {
+        ctx?.let {
+            if (fileDTO.filePackage == null) {
+                fileDTO.filePackage = "UNKNOWN"
+            }
+
+            // added primary constructor fields
+            ctx.primaryConstructor()?.classParameters()?.classParameter()?.forEach { classParameter ->
+                run {
+                    val field = AttributeDTO(
+                        classParameter.simpleIdentifier().text,
+                        classParameter.type().text,
+                        AttributeType.FIELD
+                    )
+                    parsingContext.classDTO!!.classFields.add(field)
+                }
+            }
+
+            parsingContext.classDTO!!.classAnnotations.addAll(parsingContext.mutableListOfAnnotations)
+            parsingContext.mutableListOfAnnotations.clear()
+
+            parsingContext.classesDTOs.add(parsingContext.classDTO!!)
+            parsingContext.classDTO = null
+        }
+        parsingContext.insideClassDeclaration = false
+    }
+
     override fun enterFunctionDeclaration(ctx: KotlinParser.FunctionDeclarationContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
+
         if (parsingContext.insideClassDeclaration) {
+            // todo: should remove this when moving function parsing logic her
             return
         }
+        parsingContext.insideFunctionDeclaration = true
 
         parseFunctionDeclaration(ctx)?.let { methodDTO ->
             fileDTO.functions.add(methodDTO)
         }
     }
 
-    private fun parseClassDeclaration(ctx: KotlinParser.ClassDeclarationContext): ClassDTO? {
-        if (ctx.simpleIdentifier() == null) {
-            return null
-        }
-        val classDTO = ClassDTO(ctx.simpleIdentifier().text)
-        classDTO.classPackage = fileDTO.filePackage
+    override fun exitFunctionDeclaration(ctx: KotlinParser.FunctionDeclarationContext?) {
+        if (ctx == null) return
 
-        ctx.primaryConstructor()?.classParameters()?.classParameter()?.forEach() { classParameter ->
-            run {
-                val field = AttributeDTO(
-                    classParameter.simpleIdentifier().text,
-                    classParameter.type().text,
-                    AttributeType.FIELD
-                )
-                classDTO.addField(field)
-            }
-        }
-        ctx.classBody()?.let { classBody ->
-            classBody.classMemberDeclarations().classMemberDeclaration().forEach { classMemberDeclaration ->
-                run {
-                    if (classMemberDeclaration.declaration() != null) {
-                        parseClass(classMemberDeclaration.declaration(), classDTO)
-                    }
-                }
-            }
-        }
-
-        return classDTO
+        parsingContext.insideFunctionDeclaration = false
     }
 
-    private fun parseClass(declaration: KotlinParser.DeclarationContext, classDTO: ClassDTO) {
-        if (declaration.functionDeclaration() != null) {
-            parseFunctionDeclaration(declaration.functionDeclaration())?.let { methodDTO ->
-                classDTO.classMethods.add(methodDTO)
+    override fun enterFunctionBody(ctx: KotlinParser.FunctionBodyContext?) {
+        if (ctx == null) return
+
+        parsingContext.insideFunctionBody = true
+    }
+
+    override fun exitFunctionBody(ctx: KotlinParser.FunctionBodyContext?) {
+        if (ctx == null) return
+
+        parsingContext.insideFunctionBody = false
+    }
+
+    override fun enterClassMemberDeclaration(ctx: KotlinParser.ClassMemberDeclarationContext?) {
+        if (ctx == null) {
+            return
+        }
+        parsingContext.insideClassMemberDeclaration = true
+    }
+
+    override fun exitClassMemberDeclaration(ctx: KotlinParser.ClassMemberDeclarationContext?) {
+        if (ctx == null) {
+            return
+        }
+        parsingContext.insideClassMemberDeclaration = false
+    }
+
+    override fun enterDeclaration(ctx: KotlinParser.DeclarationContext?) {
+        if (ctx == null) {
+            return
+        }
+        if (ctx.functionDeclaration() != null && checkIfClassMethod()) {
+            parseFunctionDeclaration(ctx.functionDeclaration())?.let { methodDTO ->
+                parsingContext.classDTO!!.classMethods.add(methodDTO)
             }
-        } else if (declaration.propertyDeclaration() != null) {
-            parsePropertyDeclaration(declaration.propertyDeclaration())?.let { attributeDTO ->
-                classDTO.classFields.add(attributeDTO)
+        } else if (ctx.propertyDeclaration() != null && checkIfClassField()) {
+            parsePropertyDeclaration(ctx.propertyDeclaration())?.let { attributeDTO ->
+                parsingContext.classDTO!!.classFields.add(attributeDTO)
             }
         }
+        parsingContext.insideDeclaration = true
+    }
+
+    override fun enterClassBody(ctx: KotlinParser.ClassBodyContext?) {
+        if (ctx == null) {
+            return
+        }
+        parsingContext.insideClassBody = true
+    }
+
+    override fun exitClassBody(ctx: KotlinParser.ClassBodyContext?) {
+        if (ctx == null) {
+            return
+        }
+        parsingContext.insideClassBody = false
+    }
+
+    override fun enterUserType(ctx: KotlinParser.UserTypeContext?) {
+        if (ctx == null) {
+            return
+        }
+        if (checkIfUserTypeIsForAnnotation()) {
+            parsingContext.annotationName = ctx.text
+        }
+        parsingContext.insideUserType = true
+    }
+
+    override fun exitUserType(ctx: KotlinParser.UserTypeContext?) {
+        if (ctx == null) {
+            return
+        }
+        parsingContext.insideUserType = false
+    }
+
+    override fun enterValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
+        if (ctx == null) {
+            return
+        }
+        if (parsingContext.insideAnnotation) {
+            parsingContext.annotationArguments.add(ctx.text)
+        }
+    }
+
+    override fun enterAnnotation(ctx: KotlinParser.AnnotationContext?) {
+        if (ctx == null ) {
+            return
+        }
+        parsingContext.insideAnnotation = true
+    }
+
+    override fun exitAnnotation(ctx: KotlinParser.AnnotationContext?) {
+        if (ctx == null ) {
+            return
+        }
+        parsingContext.insideAnnotation = false
+    }
+
+    override fun enterSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
+        if (ctx == null ) return
+        parsingContext.insideSingleAnnotation = true
+    }
+
+    override fun exitSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
+        if (ctx == null ) {
+            return
+        }
+        parsingContext.insideSingleAnnotation = false
+        if (checkIfClassAnnotation()) {
+            val singleAnnotation = AnnotationDTO(parsingContext.annotationName)
+            singleAnnotation.addAnnotationArguments(parsingContext.annotationArguments)
+            parsingContext.annotationArguments.clear()
+            print("Adding class annotation: $singleAnnotation")
+            parsingContext.mutableListOfAnnotations.add(singleAnnotation)
+        }
+    }
+
+    private fun checkIfClassAnnotation(): Boolean {
+        return parsingContext.insideClassDeclaration
+                && !parsingContext.insideClassBody
+    }
+
+    private fun checkIfUserTypeIsForAnnotation(): Boolean {
+        return parsingContext.insideSingleAnnotation
+    }
+    private fun checkIfClassField(): Boolean {
+        return parsingContext.insideClassMemberDeclaration
+                && !parsingContext.insideFieldDeclaration
+                && !parsingContext.insideFunctionDeclaration
+                && !parsingContext.insideFunctionBody
+    }
+
+    private fun checkIfClassMethod(): Boolean {
+        return  parsingContext.insideClassMemberDeclaration
+                && !parsingContext.insideFunctionDeclaration
+    }
+
+    override fun exitDeclaration(ctx: KotlinParser.DeclarationContext?) {
+        if (ctx == null) {
+            return
+        }
+        parsingContext.insideDeclaration = false
     }
 
     private fun parsePropertyDeclaration(propertyDeclaration: KotlinParser.PropertyDeclarationContext): AttributeDTO? {
+        parsingContext.insideFieldDeclaration = true
         val parserTreeWalker = ParseTreeWalker()
         val functionListener = FieldListener()
         parserTreeWalker.walk(functionListener, propertyDeclaration)
+        parsingContext.insideFieldDeclaration = false
         return functionListener.attributeDTO
     }
 
     private fun parseFunctionDeclaration(functionDeclaration: KotlinParser.FunctionDeclarationContext): MethodDTO? {
+        parsingContext.insideFunctionDeclaration = true
         val parserTreeWalker = ParseTreeWalker()
         val functionListener = FunctionListener()
         parserTreeWalker.walk(functionListener, functionDeclaration)
+        parsingContext.insideFunctionDeclaration = false
         return functionListener.methodDTO
     }
 
