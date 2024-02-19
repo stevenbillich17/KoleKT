@@ -8,11 +8,12 @@ import org.dxworks.kolekt.listeners.FieldListener
 import org.dxworks.kolekt.listeners.FunctionListener
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
+import org.slf4j.LoggerFactory
 
 class FileExtractionListener(private val pathToFile: String, private val name: String) : KotlinParserBaseListener() {
     private val fileDTO = FileDTO(pathToFile, name)
     private val parsingContext = ParsingContext()
-    val className = ""
+    private val logger = LoggerFactory.getLogger(FileExtractionListener::class.java)
     
     override fun enterKotlinFile(ctx: KotlinParser.KotlinFileContext?) {
         ctx?.let {
@@ -21,9 +22,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     override fun enterPrimaryConstructor(ctx: KotlinParser.PrimaryConstructorContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         parsingContext.insidePrimaryConstructor = true
     }
 
@@ -31,34 +30,9 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         parsingContext.insidePrimaryConstructor = false
     }
 
-
-    override fun enterClassParameter(ctx: KotlinParser.ClassParameterContext?) {
-        if (ctx == null) {
-            return
-        }
-        var name: String? = null
-        var type: String? = null
-        ctx.type()?.let {
-            println("Class parameter type: ${it.text}")
-        }
-        ctx.simpleIdentifier()?.let {
-            println("Class parameter name: ${it.text}")
-        }
-        if (name == null || type == null) {
-            return
-        }
-        parsingContext.mutableListOfClassParameters.add(AttributeDTO(
-            name,
-            type,
-            AttributeType.FIELD
-        ))
-    }
-
     override fun enterFunctionValueParameters(ctx: KotlinParser.FunctionValueParametersContext?) {
-        if (ctx == null) {
-            return
-        }
-        println("Function value parameters: ${ctx.text}")
+        if (ctx == null) return
+        logger.debug("Function value parameters: ${ctx.text}")
     }
 
     override fun enterImportHeader(ctx: KotlinParser.ImportHeaderContext?) {
@@ -68,9 +42,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     override fun enterClassDeclaration(ctx: KotlinParser.ClassDeclarationContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         parsingContext.classDTO =  ClassDTO(ctx.simpleIdentifier().text)
         parsingContext.classDTO!!.classPackage = fileDTO.filePackage
         parsingContext.insideClassDeclaration = true
@@ -136,23 +108,17 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     override fun enterClassMemberDeclaration(ctx: KotlinParser.ClassMemberDeclarationContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         parsingContext.insideClassMemberDeclaration = true
     }
 
     override fun exitClassMemberDeclaration(ctx: KotlinParser.ClassMemberDeclarationContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         parsingContext.insideClassMemberDeclaration = false
     }
 
     override fun enterDeclaration(ctx: KotlinParser.DeclarationContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         if (ctx.functionDeclaration() != null && checkIfClassMethod()) {
             parseFunctionDeclaration(ctx.functionDeclaration())?.let { methodDTO ->
                 parsingContext.classDTO!!.classMethods.add(methodDTO)
@@ -166,56 +132,42 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     override fun enterClassBody(ctx: KotlinParser.ClassBodyContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         parsingContext.insideClassBody = true
     }
 
     override fun exitClassBody(ctx: KotlinParser.ClassBodyContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         parsingContext.insideClassBody = false
     }
 
     override fun enterUserType(ctx: KotlinParser.UserTypeContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
+        parsingContext.insideUserType = true
         if (checkIfUserTypeIsForAnnotation()) {
             parsingContext.annotationName = ctx.text
         }
-        parsingContext.insideUserType = true
     }
 
     override fun exitUserType(ctx: KotlinParser.UserTypeContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         parsingContext.insideUserType = false
     }
 
     override fun enterValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         if (parsingContext.insideAnnotation) {
             parsingContext.annotationArguments.add(ctx.text)
         }
     }
 
     override fun enterAnnotation(ctx: KotlinParser.AnnotationContext?) {
-        if (ctx == null ) {
-            return
-        }
+        if (ctx == null ) return
         parsingContext.insideAnnotation = true
     }
 
     override fun exitAnnotation(ctx: KotlinParser.AnnotationContext?) {
-        if (ctx == null ) {
-            return
-        }
+        if (ctx == null ) return
         parsingContext.insideAnnotation = false
     }
 
@@ -225,15 +177,13 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     override fun exitSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
-        if (ctx == null ) {
-            return
-        }
+        if (ctx == null ) return
         parsingContext.insideSingleAnnotation = false
         if (checkIfClassAnnotation()) {
             val singleAnnotation = AnnotationDTO(parsingContext.annotationName)
             singleAnnotation.addAnnotationArguments(parsingContext.annotationArguments)
             parsingContext.annotationArguments.clear()
-            print("Adding class annotation: $singleAnnotation")
+            logger.debug("Adding class annotation: {}", singleAnnotation)
             parsingContext.mutableListOfAnnotations.add(singleAnnotation)
         }
     }
@@ -259,9 +209,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     override fun exitDeclaration(ctx: KotlinParser.DeclarationContext?) {
-        if (ctx == null) {
-            return
-        }
+        if (ctx == null) return
         parsingContext.insideDeclaration = false
     }
 

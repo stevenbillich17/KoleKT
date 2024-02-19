@@ -8,6 +8,7 @@ import org.dxworks.kolekt.extraction.FileExtractionListener
 import org.jetbrains.kotlin.spec.grammar.KotlinLexer
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParser.KotlinFileContext
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.lang.Exception
@@ -19,6 +20,9 @@ class ProjectExtractor(private val pathToProject: String) {
     val kotlinExtension = ".kt"
     var pathToFiles: MutableList<String> = mutableListOf()
     var filesDTOs: MutableList<FileDTO> = mutableListOf()
+    val logger = LoggerFactory.getLogger(ProjectExtractor::class.java)
+
+
     fun parse() {
         readPathToFiles()
         parseFiles()
@@ -32,7 +36,7 @@ class ProjectExtractor(private val pathToProject: String) {
         }
     }
 
-    fun printProgressBar(progress: Int, total: Int) {
+    private fun printProgressBar(progress: Int, total: Int) {
         val progressBarLength = 50 // Length of the progress bar in characters
         val progressPercentage = (progress.toFloat() / total.toFloat())
         val progressChars = (progressPercentage * progressBarLength).toInt()
@@ -42,6 +46,7 @@ class ProjectExtractor(private val pathToProject: String) {
 
     private fun parseFiles() {
         val total  = pathToFiles.size
+        print("\r[]0%")
         for (i in 0..<total) {
             val filePath = pathToFiles[i]
             try {
@@ -57,9 +62,8 @@ class ProjectExtractor(private val pathToProject: String) {
                 filesDTOs.add(fileDTO)
 
             } catch (e : Exception) {
-                println("ERROR {$e}")
+                logger.error("Exception at parsing file: {$filePath}. With message: {$e}")
             }
-            //Thread.sleep(1000)
             printProgressBar(i+1, total)
         }
     }
@@ -78,7 +82,7 @@ class ProjectExtractor(private val pathToProject: String) {
                 file?.let {
                     if (it.toString().endsWith(kotlinExtension)) {
                         pathToFiles.add(it.toString())
-                        println("Added new path: {${it}}")
+                        logger.debug("Added new path: {{}}", it)
                     }
                 }
                 return FileVisitResult.CONTINUE
@@ -87,8 +91,7 @@ class ProjectExtractor(private val pathToProject: String) {
             override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult {
                 val stringPath = file?.pathString ?: "UNKNOWN PATH"
                 val excMessage = exc?.message ?: "UNKNOWN MESSAGE"
-                println("ERROR at visiting: $stringPath. With text: $excMessage")
-
+                logger.error("ERROR at visiting: {{}}. With text: {{}}", stringPath, excMessage)
                 return FileVisitResult.CONTINUE
             }
         }

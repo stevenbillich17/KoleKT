@@ -14,6 +14,8 @@ dependencies {
     implementation files("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\Grammar-Tools-Folder\\kotlin-grammar-tools-0.1-43.jar")
     //implementation files("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\Grammar-Tools-Folder\\kotlin-grammar-parser-0.1.jar") (can be removed, not needed now)
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'ch.qos.logback:logback-classic:1.4.14'
 }
 
 test {
