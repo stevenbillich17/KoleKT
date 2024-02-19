@@ -32,8 +32,18 @@ class ProjectExtractor(private val pathToProject: String) {
         }
     }
 
+    fun printProgressBar(progress: Int, total: Int) {
+        val progressBarLength = 50 // Length of the progress bar in characters
+        val progressPercentage = (progress.toFloat() / total.toFloat())
+        val progressChars = (progressPercentage * progressBarLength).toInt()
+        val progressBar = "=".repeat(progressChars) + " ".repeat(progressBarLength - progressChars)
+        print("\r[$progressBar] ${String.format("%.2f", progressPercentage * 100)}%")
+    }
+
     private fun parseFiles() {
-        pathToFiles.forEach { filePath ->
+        val total  = pathToFiles.size
+        for (i in 0..<total) {
+            val filePath = pathToFiles[i]
             try {
                 val file = File(filePath)
                 val tree = buildTreeFromFile(file)
@@ -49,6 +59,8 @@ class ProjectExtractor(private val pathToProject: String) {
             } catch (e : Exception) {
                 println("ERROR {$e}")
             }
+            //Thread.sleep(1000)
+            printProgressBar(i+1, total)
         }
     }
 
