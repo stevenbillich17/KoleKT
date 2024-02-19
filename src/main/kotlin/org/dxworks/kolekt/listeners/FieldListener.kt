@@ -1,5 +1,6 @@
 package org.dxworks.kolekt.listeners
 
+import org.dxworks.kolekt.context.ParsingContext
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.enums.AttributeType
@@ -8,13 +9,7 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
 class FieldListener : KotlinParserBaseListener() {
     var attributeDTO: AttributeDTO? = null
-    private var insidePropertyDeclaration = false
-    private var insideSimpleIdentifier = false
-    private var insideVariableDeclaration = false
-    private var insideInfixFunctionCall = false
-    private var insideCallSuffix = false
-    private var insideValueArgument = false
-    private var containsColon = false
+    val parsingContext = ParsingContext()
 
     private var wasFieldNameSet = false
 
@@ -30,12 +25,12 @@ class FieldListener : KotlinParserBaseListener() {
     private val calledMethodParameters = mutableListOf<String>()
     override fun enterPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
         if (ctx == null) return
-        insidePropertyDeclaration = true
+        parsingContext.insidePropertyDeclaration = true
     }
 
     override fun exitPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
         if (ctx == null) return
-        insidePropertyDeclaration = false
+        parsingContext.insidePropertyDeclaration = false
 
         attributeDTO = AttributeDTO(fieldName, fieldType, AttributeType.FIELD)
         methodCallDTO?.let {
@@ -46,55 +41,55 @@ class FieldListener : KotlinParserBaseListener() {
     }
 
     override fun enterVariableDeclaration(ctx: KotlinParser.VariableDeclarationContext?) {
-        if (ctx == null || !insidePropertyDeclaration) return
-        insideVariableDeclaration = true
+        if (ctx == null || !parsingContext.insidePropertyDeclaration) return
+        parsingContext.insideVariableDeclaration = true
 
         ctx.COLON()?.let {
-            containsColon = true
+            parsingContext.containsColon = true
         }
     }
 
     override fun enterInfixFunctionCall(ctx: KotlinParser.InfixFunctionCallContext?) {
         if (ctx == null) return
-        insideInfixFunctionCall = true
+        parsingContext.insideInfixFunctionCall = true
     }
 
     override fun exitInfixFunctionCall(ctx: KotlinParser.InfixFunctionCallContext?) {
         if (ctx == null) return
-        insideInfixFunctionCall = false
+        parsingContext.insideInfixFunctionCall = false
     }
 
 
     override fun enterCallSuffix(ctx: KotlinParser.CallSuffixContext?) {
         if (ctx == null) return
-        insideCallSuffix = true
+        parsingContext.insideCallSuffix = true
     }
 
     override fun exitCallSuffix(ctx: KotlinParser.CallSuffixContext?) {
         if (ctx == null) return
-        insideCallSuffix = false
+        parsingContext.insideCallSuffix = false
         wasCallSuffix = true
 
         methodCallDTO = MethodCallDTO(calledMethodName, calledMethodParameters)
     }
 
     override fun exitVariableDeclaration(ctx: KotlinParser.VariableDeclarationContext?) {
-        if (ctx == null || !insidePropertyDeclaration) return
-        insideVariableDeclaration = false
+        if (ctx == null || !parsingContext.insidePropertyDeclaration) return
+        parsingContext.insideVariableDeclaration = false
     }
 
     override fun enterSimpleIdentifier(ctx: KotlinParser.SimpleIdentifierContext?) {
-        if (ctx == null || !insidePropertyDeclaration) return
-        insideSimpleIdentifier = true
+        if (ctx == null || !parsingContext.insidePropertyDeclaration) return
+        parsingContext.insideSimpleIdentifier = true
 
         if (!wasFieldNameSet) {
             fieldName = ctx.text
             wasFieldNameSet = true
-        } else if (containsColon && insideVariableDeclaration && !wasFieldTypeSet) {
-            // after the information is not placed insideVariableDeclaration
+        } else if (parsingContext.containsColon && parsingContext.insideVariableDeclaration && !wasFieldTypeSet) {
+            // after the information is not placed parsingContext.insideVariableDeclaration
             fieldType = ctx.text
             wasFieldTypeSet = true
-        } else if (!wasMethodNameSet && insideInfixFunctionCall) {
+        } else if (!wasMethodNameSet && parsingContext.insideInfixFunctionCall) {
             // is set by a method call
             calledMethodName = ctx.text ?: "UNKNOWN"
             wasMethodNameSet = true
@@ -103,7 +98,7 @@ class FieldListener : KotlinParserBaseListener() {
 
     override fun enterStringLiteral(ctx: KotlinParser.StringLiteralContext?) {
         if (ctx == null) return
-        if (insideInfixFunctionCall && !wasFieldTypeSet && !insideVariableDeclaration && !containsColon) {
+        if (parsingContext.insideInfixFunctionCall && !wasFieldTypeSet && !parsingContext.insideVariableDeclaration && !parsingContext.containsColon) {
             fieldType = "String"
             wasFieldTypeSet = true
         }
@@ -112,9 +107,9 @@ class FieldListener : KotlinParserBaseListener() {
     override fun enterLiteralConstant(ctx: KotlinParser.LiteralConstantContext?) {
         if (ctx == null) return
 
-        if (!containsColon) {
+        if (!parsingContext.containsColon) {
             fieldType = "unknown"
-            if (insideInfixFunctionCall && !wasFieldTypeSet) {
+            if (parsingContext.insideInfixFunctionCall && !wasFieldTypeSet) {
                 if (ctx.BinLiteral() != null) {
                     fieldType = "Bin"
                 } else if (ctx.BooleanLiteral() != null) {
@@ -141,15 +136,15 @@ class FieldListener : KotlinParserBaseListener() {
 
     override fun enterValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
         if (ctx == null) return
-        insideValueArgument = true
-        if (insideCallSuffix) {
+        parsingContext.insideValueArgument = true
+        if (parsingContext.insideCallSuffix) {
             calledMethodParameters.add(ctx.text)
         }
     }
 
     override fun exitValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
         if (ctx == null) return
-        insideValueArgument = false
+        parsingContext.insideValueArgument = false
     }
 
 }

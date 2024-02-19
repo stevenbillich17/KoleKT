@@ -1,5 +1,6 @@
 package org.dxworks.kolekt.listeners
 
+import org.dxworks.kolekt.context.ParsingContext
 import org.dxworks.kolekt.dtos.AnnotationDTO
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
@@ -10,132 +11,97 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 
 class FunctionListener : KotlinParserBaseListener() {
     var methodDTO: MethodDTO? = null
-    private var shouldStop = false
-    private var insideFunctionBody = false
-    private var insidePropertyDeclaration = false
-    private var insideDeclaration = false
-    private var insideVariableDeclaration = false
-    private var insideExpression = false
-    private var insideInfixFunctionCall = false
-    private var insidePrimaryExpression = false
-    private var insideCallSuffix = false
-    private var insideValueArgument = false
-    private var insideAdditiveExpression = false
-    private var insideMultiplicativeExpression = false
-    private var insideAsExpression = false
-    private var insidePrefixUnaryExpression = false
-    private var insidePostfixUnaryExpression = false
-    private var insidePostFixUnarySuffix = false
-    private var insideNavigationSuffix = false
-    private var insideFunctionParameters = false
-    private var insideAnnotation = false
-    private var insideSingleAnnotation = false
-    private var insideUserType = false
-    private var insideConstructorInvocation = false
-
-    private var nameAlreadySetForMethod = false
-    private var wasThereAnCallSuffix = false
-    private var wasThereAnInfixFunctionCall = false
-    private var wasThereAnNavigationSuffix = false
-
-    private var valueName = ""
-    private var referenceName: String? = ""
-    private var valueType = ""
-    private var calledMethodName = ""
-    private var calledMethodParameters = mutableListOf<String>()
-    private var lastCallSuffixMethodCall: MethodCallDTO? = null
-    private var annotationArguments = mutableListOf<String>()
-    private var annotationName = ""
-
+    val parsingContext = ParsingContext()
 
     private var currentDeclaration: KotlinParser.DeclarationContext? = null
     override fun enterFunctionDeclaration(ctx: KotlinParser.FunctionDeclarationContext?) {
-        if ( ctx == null || shouldStop) {
-            shouldStop = true
+        if ( ctx == null || parsingContext.shouldStop) {
+            parsingContext.shouldStop = true
             return
         }
         methodDTO = MethodDTO(ctx.simpleIdentifier().text)
     }
 
     override fun enterAnnotation(ctx: KotlinParser.AnnotationContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         print("Annotation: ${ctx.text}")
-        insideAnnotation = true
+        parsingContext.insideAnnotation = true
     }
 
     override fun exitAnnotation(ctx: KotlinParser.AnnotationContext?) {
-        if (ctx == null || shouldStop) return
-        insideAnnotation = false
+        if (ctx == null || parsingContext.shouldStop) return
+        parsingContext.insideAnnotation = false
     }
 
     override fun enterSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Single annotation: ${ctx.text}")
-        insideSingleAnnotation = true
+        parsingContext.insideSingleAnnotation = true
     }
 
     override fun exitSingleAnnotation(ctx: KotlinParser.SingleAnnotationContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting single annotation: ${ctx.text}")
-        insideSingleAnnotation = false
+        parsingContext.insideSingleAnnotation = false
         // function annotation is outside the function body
-        if (!insideFunctionBody) {
-            val singleAnnotation = AnnotationDTO(annotationName)
-            singleAnnotation.addAnnotationArguments(annotationArguments)
+        if (!parsingContext.insideFunctionBody) {
+            val singleAnnotation = AnnotationDTO(parsingContext.annotationName)
+            singleAnnotation.addAnnotationArguments(parsingContext.annotationArguments)
+            parsingContext.annotationArguments.clear()
             methodDTO!!.addAnnotation(singleAnnotation)
         }
     }
 
     override fun enterConstructorInvocation(ctx: KotlinParser.ConstructorInvocationContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Constructor invocation: ${ctx.text}")
 
-        insideConstructorInvocation = true
+        parsingContext.insideConstructorInvocation = true
     }
 
     override fun exitConstructorInvocation(ctx: KotlinParser.ConstructorInvocationContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting constructor invocation: ${ctx.text}")
 
-        insideConstructorInvocation = false
+        parsingContext.insideConstructorInvocation = false
     }
 
     override fun enterUserType(ctx: KotlinParser.UserTypeContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("User type: ${ctx.text}")
 
-        insideUserType = true
-        if (insideSingleAnnotation) {
-            annotationName = ctx.text
+        parsingContext.insideUserType = true
+        if (parsingContext.insideSingleAnnotation) {
+            parsingContext.annotationName = ctx.text
         }
     }
 
     override fun exitUserType(ctx: KotlinParser.UserTypeContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting user type: ${ctx.text}")
 
-        insideUserType = false
+        parsingContext.insideUserType = false
     }
 
     override fun enterType(ctx: KotlinParser.TypeContext?) {
-        if (ctx == null || shouldStop) return
-        if (!insideFunctionBody && !insideFunctionParameters) {
+        if (ctx == null || parsingContext.shouldStop) return
+        if (!parsingContext.insideFunctionBody && !parsingContext.insideFunctionParameters) {
             methodDTO!!.setMethodReturnType(ctx.text)
         }
     }
 
     override fun enterFunctionValueParameters(ctx: KotlinParser.FunctionValueParametersContext?) {
-        if (ctx == null || shouldStop) return
-        insideFunctionParameters = true
+        if (ctx == null || parsingContext.shouldStop) return
+        parsingContext.insideFunctionParameters = true
     }
 
     override fun exitFunctionValueParameters(ctx: KotlinParser.FunctionValueParametersContext?) {
-        if (ctx == null || shouldStop) return
-        insideFunctionParameters = false
+        if (ctx == null || parsingContext.shouldStop) return
+        parsingContext.insideFunctionParameters = false
     }
 
     override fun enterFunctionValueParameter(ctx: KotlinParser.FunctionValueParameterContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
 
         val parameterFromCtx: KotlinParser.ParameterContext = ctx.parameter()
         val foundParameter = AttributeDTO(
@@ -147,50 +113,50 @@ class FunctionListener : KotlinParserBaseListener() {
     }
 
     override fun enterFunctionBody(ctx: KotlinParser.FunctionBodyContext?) {
-        insideFunctionBody = true
+        parsingContext.insideFunctionBody = true
     }
 
     override fun exitFunctionBody(ctx: KotlinParser.FunctionBodyContext?) {
-        insideFunctionBody = false
+        parsingContext.insideFunctionBody = false
     }
 
     override fun enterDeclaration(ctx: KotlinParser.DeclarationContext?) {
-        if (ctx == null || shouldStop) return
-        insideDeclaration = true
+        if (ctx == null || parsingContext.shouldStop) return
+        parsingContext.insideDeclaration = true
         currentDeclaration = ctx
     }
 
     override fun exitDeclaration(ctx: KotlinParser.DeclarationContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         if (currentDeclaration == ctx) {
-            insideDeclaration = false
+            parsingContext.insideDeclaration = false
         }
     }
 
     override fun enterPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
-        if (ctx == null || shouldStop) return
-        insidePropertyDeclaration = true
-        wasThereAnCallSuffix = false
-        wasThereAnInfixFunctionCall = false
+        if (ctx == null || parsingContext.shouldStop) return
+        parsingContext.insidePropertyDeclaration = true
+        parsingContext.wasThereAnCallSuffix = false
+        parsingContext.wasThereAnInfixFunctionCall = false
         println("Property declaration: ${ctx.text}")
     }
 
     override fun exitPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
-        if (ctx == null || shouldStop) return
-        insidePropertyDeclaration = false
+        if (ctx == null || parsingContext.shouldStop) return
+        parsingContext.insidePropertyDeclaration = false
         println("Exiting property declaration: ${ctx.text}")
         if (ctx.variableDeclaration() != null) {
-            val tempType = ctx.variableDeclaration().type()?.text ?: valueType
+            val tempType = ctx.variableDeclaration().type()?.text ?: parsingContext.valueType
 
-            // we were inside a local variable declaration
+            // we were context.inside a local variable declaration
             val foundAttribute = AttributeDTO(
                 ctx.variableDeclaration().simpleIdentifier().text,
                 tempType,
                 AttributeType.LOCAL_VARIABLE
             )
 
-            if (tempType == "null" && wasThereAnCallSuffix && wasThereAnInfixFunctionCall) {
-                foundAttribute.setByMethodCall(lastCallSuffixMethodCall!!)
+            if (tempType == "null" && parsingContext.wasThereAnCallSuffix && parsingContext.wasThereAnInfixFunctionCall) {
+                foundAttribute.setByMethodCall(parsingContext.lastCallSuffixMethodCall!!)
             }
 
             methodDTO!!.methodLocalVariables.add(foundAttribute)
@@ -198,228 +164,228 @@ class FunctionListener : KotlinParserBaseListener() {
     }
 
     override fun enterVariableDeclaration(ctx: KotlinParser.VariableDeclarationContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Variable declaration: ${ctx.text}")
-        insideVariableDeclaration = true
+        parsingContext.insideVariableDeclaration = true
     }
 
     override fun exitVariableDeclaration(ctx: KotlinParser.VariableDeclarationContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting variable declaration: ${ctx.text}")
-        insideVariableDeclaration = false
+        parsingContext.insideVariableDeclaration = false
     }
 
     override fun enterExpression(ctx: KotlinParser.ExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Expression: ${ctx.text}")
-        insideExpression = true
+        parsingContext.insideExpression = true
     }
 
     override fun exitExpression(ctx: KotlinParser.ExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting expression: ${ctx.text}")
-        insideExpression = false
+        parsingContext.insideExpression = false
     }
 
     override fun enterInfixFunctionCall(ctx: KotlinParser.InfixFunctionCallContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Infix function call: ${ctx.text}")
-        insideInfixFunctionCall = true
-        nameAlreadySetForMethod = false
-        wasThereAnInfixFunctionCall = true
+        parsingContext.insideInfixFunctionCall = true
+        parsingContext.nameAlreadySetForMethod = false
+        parsingContext.wasThereAnInfixFunctionCall = true
     }
 
     override fun exitInfixFunctionCall(ctx: KotlinParser.InfixFunctionCallContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting infix function call: ${ctx.text}")
-        insideInfixFunctionCall = false
-        nameAlreadySetForMethod = false
+        parsingContext.insideInfixFunctionCall = false
+        parsingContext.nameAlreadySetForMethod = false
     }
 
     override fun enterPrimaryExpression(ctx: KotlinParser.PrimaryExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Primary expression: ${ctx.text}")
-        insidePrimaryExpression = true
-        if (insideFunctionBody && insideDeclaration) {
+        parsingContext.insidePrimaryExpression = true
+        if (parsingContext.insideFunctionBody && parsingContext.insideDeclaration) {
             // special case for string literals
             if (ctx.stringLiteral() != null) {
-                valueType = "String"
+                parsingContext.valueType = "String"
             }
         }
-        if (!nameAlreadySetForMethod && !insideCallSuffix) {
-            calledMethodName = ctx.simpleIdentifier()?.text ?: "UNKNOWN"
-            nameAlreadySetForMethod = true
+        if (!parsingContext.nameAlreadySetForMethod && !parsingContext.insideCallSuffix) {
+            parsingContext.calledMethodName = ctx.simpleIdentifier()?.text ?: "UNKNOWN"
+            parsingContext.nameAlreadySetForMethod = true
         }
-        if (insideInfixFunctionCall && insideAdditiveExpression && insidePostfixUnaryExpression && !insideCallSuffix) {
-            referenceName = ctx.simpleIdentifier()?.text
+        if (parsingContext.insideInfixFunctionCall && parsingContext.insideAdditiveExpression && parsingContext.insidePostfixUnaryExpression && !parsingContext.insideCallSuffix) {
+            parsingContext.referenceName = ctx.simpleIdentifier()?.text
         }
     }
 
     override fun exitPrimaryExpression(ctx: KotlinParser.PrimaryExpressionContext?) {
         println("Exiting primary expression: ${ctx?.text}")
-        insidePrimaryExpression = false
+        parsingContext.insidePrimaryExpression = false
     }
 
 
     override fun enterAdditiveExpression(ctx: KotlinParser.AdditiveExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Additive expression: ${ctx.text}")
-        insideAdditiveExpression = true
+        parsingContext.insideAdditiveExpression = true
     }
 
     override fun exitAdditiveExpression(ctx: KotlinParser.AdditiveExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Exiting additive expression: ${ctx.text}")
-        insideAdditiveExpression = false
+        parsingContext.insideAdditiveExpression = false
     }
 
     override fun enterMultiplicativeExpression(ctx: KotlinParser.MultiplicativeExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Multiplicative expression: ${ctx.text}")
-        insideMultiplicativeExpression = true
+        parsingContext.insideMultiplicativeExpression = true
     }
 
     override fun exitMultiplicativeExpression(ctx: KotlinParser.MultiplicativeExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Exiting multiplicative expression: ${ctx.text}")
-        insideMultiplicativeExpression = false
+        parsingContext.insideMultiplicativeExpression = false
     }
 
     override fun enterAsExpression(ctx: KotlinParser.AsExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("As expression: ${ctx.text}")
-        insideAsExpression = true
+        parsingContext.insideAsExpression = true
     }
 
     override fun exitAsExpression(ctx: KotlinParser.AsExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting as expression: ${ctx.text}")
-        insideAsExpression = false
+        parsingContext.insideAsExpression = false
     }
 
     override fun enterPrefixUnaryExpression(ctx: KotlinParser.PrefixUnaryExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Prefix unary expression: ${ctx.text}")
-        insidePrefixUnaryExpression = true
+        parsingContext.insidePrefixUnaryExpression = true
     }
 
     override fun exitPrefixUnaryExpression(ctx: KotlinParser.PrefixUnaryExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Exiting prefix unary expression: ${ctx.text}")
-        insidePrefixUnaryExpression = false
+        parsingContext.insidePrefixUnaryExpression = false
     }
 
     override fun enterPostfixUnaryExpression(ctx: KotlinParser.PostfixUnaryExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Postfix unary expression: ${ctx.text}")
-        insidePostfixUnaryExpression = true
+        parsingContext.insidePostfixUnaryExpression = true
     }
 
     override fun exitPostfixUnaryExpression(ctx: KotlinParser.PostfixUnaryExpressionContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Exiting postfix unary expression: ${ctx.text}")
-        insidePostfixUnaryExpression = false
+        parsingContext.insidePostfixUnaryExpression = false
     }
 
     override fun enterPostfixUnarySuffix(ctx: KotlinParser.PostfixUnarySuffixContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Postfix unary suffix: ${ctx.text}")
-        insidePostFixUnarySuffix = true
+        parsingContext.insidePostFixUnarySuffix = true
     }
 
     override fun exitPostfixUnarySuffix(ctx: KotlinParser.PostfixUnarySuffixContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         //println("Exiting postfix unary suffix: ${ctx.text}")
-        insidePostFixUnarySuffix = false
+        parsingContext.insidePostFixUnarySuffix = false
     }
 
     override fun enterNavigationSuffix(ctx: KotlinParser.NavigationSuffixContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Navigation suffix: ${ctx.text}")
-        insideNavigationSuffix = true
-        wasThereAnNavigationSuffix = true
-        if (insideInfixFunctionCall && insideAdditiveExpression && insidePostFixUnarySuffix && ctx.memberAccessOperator() != null) {
-            calledMethodName = ctx.simpleIdentifier().text
+        parsingContext.insideNavigationSuffix = true
+        parsingContext.wasThereAnNavigationSuffix = true
+        if (parsingContext.insideInfixFunctionCall && parsingContext.insideAdditiveExpression && parsingContext.insidePostFixUnarySuffix && ctx.memberAccessOperator() != null) {
+            parsingContext.calledMethodName = ctx.simpleIdentifier().text
         }
     }
 
     override fun exitNavigationSuffix(ctx: KotlinParser.NavigationSuffixContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting navigation suffix: ${ctx.text}")
-        insideNavigationSuffix = false
+        parsingContext.insideNavigationSuffix = false
     }
 
     override fun enterCallSuffix(ctx: KotlinParser.CallSuffixContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Enter call suffix: ${ctx.text}")
-        insideCallSuffix = true
-        wasThereAnCallSuffix = true
+        parsingContext.insideCallSuffix = true
+        parsingContext.wasThereAnCallSuffix = true
     }
 
     override fun exitCallSuffix(ctx: KotlinParser.CallSuffixContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting call suffix: ${ctx.text}")
-        insideCallSuffix = false
+        parsingContext.insideCallSuffix = false
 
         // add new call
-        if (!wasThereAnNavigationSuffix) {
-            lastCallSuffixMethodCall = MethodCallDTO(calledMethodName, calledMethodParameters)
-            methodDTO!!.methodCalls.add(lastCallSuffixMethodCall!!)
+        if (!parsingContext.wasThereAnNavigationSuffix) {
+            parsingContext.lastCallSuffixMethodCall = MethodCallDTO(parsingContext.calledMethodName, parsingContext.calledMethodParameters)
+            methodDTO!!.methodCalls.add(parsingContext.lastCallSuffixMethodCall!!)
         } else {
             // add new call to the last call
-            lastCallSuffixMethodCall = MethodCallDTO(calledMethodName, calledMethodParameters)
-            lastCallSuffixMethodCall!!.addReference(referenceName!!)
-            methodDTO!!.methodCalls.add(lastCallSuffixMethodCall!!)
+            parsingContext.lastCallSuffixMethodCall = MethodCallDTO(parsingContext.calledMethodName, parsingContext.calledMethodParameters)
+            parsingContext. lastCallSuffixMethodCall!!.addReference(parsingContext.referenceName!!)
+            methodDTO!!.methodCalls.add(parsingContext.lastCallSuffixMethodCall!!)
         }
         // reset parameters
-        calledMethodName = ""
-        calledMethodParameters = mutableListOf()
-        referenceName = ""
-        wasThereAnNavigationSuffix = false
+        parsingContext.calledMethodName = ""
+        parsingContext.calledMethodParameters = mutableListOf()
+        parsingContext.referenceName = ""
+        parsingContext.wasThereAnNavigationSuffix = false
 
     }
 
     override fun enterValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Value argument: ${ctx.text}")
-        insideValueArgument = true
-        if (insideCallSuffix) {
-            calledMethodParameters.add(ctx.text)
+        parsingContext.insideValueArgument = true
+        if (parsingContext.insideCallSuffix) {
+            parsingContext.calledMethodParameters.add(ctx.text)
         }
-        if (insideAnnotation) {
-            annotationArguments.add(ctx.text)
+        if (parsingContext.insideAnnotation) {
+            parsingContext.annotationArguments.add(ctx.text)
         }
     }
 
     override fun exitValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Exiting value argument: ${ctx.text}")
-        insideValueArgument = false
+        parsingContext.insideValueArgument = false
     }
 
     override fun enterLiteralConstant(ctx: KotlinParser.LiteralConstantContext?) {
-        if (ctx == null || shouldStop) return
+        if (ctx == null || parsingContext.shouldStop) return
         println("Literal constant: ${ctx.text}")
-        valueType = "unknown"
-        if (insideFunctionBody && insideDeclaration && insidePrimaryExpression) {
+        parsingContext.valueType = "unknown"
+        if (parsingContext.insideFunctionBody && parsingContext.insideDeclaration && parsingContext.insidePrimaryExpression) {
             if (ctx.BinLiteral() != null) {
-                valueType = "Bin"
+                parsingContext.valueType = "Bin"
             } else if (ctx.BooleanLiteral() != null) {
-                valueType = "Boolean"
+                parsingContext.valueType = "Boolean"
             } else if (ctx.CharacterLiteral() != null) {
-                valueType = "Character"
+                parsingContext.valueType = "Character"
             } else if (ctx.HexLiteral() != null) {
-                valueType = "Hex"
+                parsingContext.valueType = "Hex"
             } else if (ctx.IntegerLiteral() != null) {
-                valueType = "Integer"
+                parsingContext.valueType = "Integer"
             } else if (ctx.RealLiteral() != null) {
-                valueType = "Double"
+                parsingContext.valueType = "Double"
             } else if (ctx.NullLiteral() != null) {
-                valueType = "null"
+                parsingContext.valueType = "null"
             } else if (ctx.UnsignedLiteral() != null) {
-                valueType = "Unsigned"
+                parsingContext.valueType = "Unsigned"
             } else if (ctx.LongLiteral() != null) {
-                valueType = "Long"
+                parsingContext.valueType = "Long"
             }
         }
     }
