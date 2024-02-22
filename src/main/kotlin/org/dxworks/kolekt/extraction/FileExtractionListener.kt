@@ -112,6 +112,13 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         parsingContext.insideClassMemberDeclaration = true
     }
 
+    override fun enterModifier(ctx: KotlinParser.ModifierContext?) {
+        if (ctx == null) return
+        if (checkIfClassModifier()) {
+            parsingContext.classDTO!!.addModifier(ctx.text)
+        }
+    }
+
     override fun exitClassMemberDeclaration(ctx: KotlinParser.ClassMemberDeclarationContext?) {
         if (ctx == null) return
         parsingContext.insideClassMemberDeclaration = false
@@ -188,7 +195,15 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         }
     }
 
+    private fun checkIfClassModifier(): Boolean {
+        return insideClassDeclarationButOutsideBody()
+    }
+
     private fun checkIfClassAnnotation(): Boolean {
+        return insideClassDeclarationButOutsideBody()
+    }
+
+    private fun insideClassDeclarationButOutsideBody(): Boolean {
         return parsingContext.insideClassDeclaration
                 && !parsingContext.insideClassBody
     }

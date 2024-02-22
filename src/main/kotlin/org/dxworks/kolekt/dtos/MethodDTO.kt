@@ -1,6 +1,7 @@
 package org.dxworks.kolekt.dtos
 
 import org.dxworks.kolekt.enums.Modifier
+import org.slf4j.LoggerFactory
 import java.util.*
 
 data class MethodDTO(val methodName: String) {
@@ -10,6 +11,9 @@ data class MethodDTO(val methodName: String) {
     val methodAnnotations = mutableListOf<AnnotationDTO>()
     val methodModifiers = mutableListOf<Modifier>()
     private var methodReturnType: String = "void"
+    private val logger = LoggerFactory.getLogger("ClassDTO@$methodName")
+
+
     override fun toString(): String {
         return "\n  {\n" +
                 "   MethodDTO(\n" +
@@ -66,7 +70,7 @@ data class MethodDTO(val methodName: String) {
             val modifier = Modifier.valueOf(modifierString.uppercase(Locale.getDefault()))
             methodModifiers.add(modifier)
         } catch (e: IllegalArgumentException) {
-            // Handle the case where the modifierString does not match any Modifier
+            logger.error("Modifier $modifierString not found")
         }
     }
 }
