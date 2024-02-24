@@ -19,7 +19,7 @@ class ClassDTO(private val className : String? = null) {
                 " classModifiers=(${buildClassModifiersString()}),\n" +
                 " classAnnotations=$classAnnotations, \n" +
                 " classMethods=$classMethods, \n" +
-                " classFields=$classFields\n)}"
+                " classFields=${buildClassFieldsString()}\n)}"
     }
 
     fun addField(field: AttributeDTO?) {
@@ -32,6 +32,12 @@ class ClassDTO(private val className : String? = null) {
     private fun buildClassModifiersString(): String {
         var result = "\n    "
         classModifiers.forEach { result += it.toString() + "\n    " }
+        return result
+    }
+
+    private fun buildClassFieldsString(): String {
+        var result = "\n    "
+        classFields.forEach { result += it.toString() + "\n    " }
         return result
     }
 

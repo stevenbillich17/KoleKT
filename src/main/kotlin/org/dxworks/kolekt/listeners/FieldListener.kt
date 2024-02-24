@@ -24,6 +24,7 @@ class FieldListener : KotlinParserBaseListener() {
     private var calledMethodName = ""
     private var methodCallDTO: MethodCallDTO? = null
     private val calledMethodParameters = mutableListOf<String>()
+    private val modifiers: MutableList<String> = mutableListOf()
 
     private val logger = LoggerFactory.getLogger(FieldListener::class.java)
     override fun enterPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
@@ -31,11 +32,19 @@ class FieldListener : KotlinParserBaseListener() {
         parsingContext.insidePropertyDeclaration = true
     }
 
+    override fun enterModifier(ctx: KotlinParser.ModifierContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        logger.trace("Modifier: ${ctx.text}")
+        modifiers.add(ctx.text)
+        parsingContext.insideModifier = true
+    }
+
     override fun exitPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
         if (ctx == null) return
         parsingContext.insidePropertyDeclaration = false
 
         attributeDTO = AttributeDTO(fieldName, fieldType, AttributeType.FIELD)
+        attributeDTO!!.addAllModifiers(modifiers)
         methodCallDTO?.let {
             attributeDTO!!.setByMethodCall(it)
         }
