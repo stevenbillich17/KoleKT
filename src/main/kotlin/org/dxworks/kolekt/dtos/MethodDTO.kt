@@ -1,16 +1,25 @@
 package org.dxworks.kolekt.dtos
 
+import org.dxworks.kolekt.enums.Modifier
+import org.slf4j.LoggerFactory
+import java.util.*
+
 data class MethodDTO(val methodName: String) {
     val methodParameters = mutableListOf<AttributeDTO>()
     val methodCalls = mutableListOf<MethodCallDTO>()
     val methodLocalVariables = mutableListOf<AttributeDTO>()
     val methodAnnotations = mutableListOf<AnnotationDTO>()
+    val methodModifiers = mutableListOf<Modifier>()
     private var methodReturnType: String = "void"
+    private val logger = LoggerFactory.getLogger("ClassDTO@$methodName")
+
+
     override fun toString(): String {
         return "\n  {\n" +
                 "   MethodDTO(\n" +
                 "   methodName='$methodName',\n" +
                 "   methodReturnType='$methodReturnType',\n" +
+                "   methodModifiers=(${buildMethodModifiersString()}),\n" +
                 "   methodParameters=(${buildMethodParametersString()}), \n" +
                 "   methodLocalVariables=(${buildMethodLocalVariablesString()}), \n" +
                 "   calls=(${buildMethodCallsString()})\n" +
@@ -46,7 +55,22 @@ data class MethodDTO(val methodName: String) {
         return result
     }
 
+    private fun buildMethodModifiersString(): String {
+        var result = "\n    "
+        methodModifiers.forEach { result += it.toString() + "\n    " }
+        return result
+    }
+
     fun addAnnotation(annotation: AnnotationDTO) {
         methodAnnotations.add(annotation)
+    }
+
+    fun addModifier(modifierString: String) {
+        try {
+            val modifier = Modifier.valueOf(modifierString.uppercase(Locale.getDefault()))
+            methodModifiers.add(modifier)
+        } catch (e: IllegalArgumentException) {
+            logger.error("Modifier $modifierString not found")
+        }
     }
 }

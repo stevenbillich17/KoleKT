@@ -6,6 +6,7 @@ import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.enums.AttributeType
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
+import org.slf4j.LoggerFactory
 
 class FieldListener : KotlinParserBaseListener() {
     var attributeDTO: AttributeDTO? = null
@@ -23,9 +24,19 @@ class FieldListener : KotlinParserBaseListener() {
     private var calledMethodName = ""
     private var methodCallDTO: MethodCallDTO? = null
     private val calledMethodParameters = mutableListOf<String>()
+    private val modifiers: MutableList<String> = mutableListOf()
+
+    private val logger = LoggerFactory.getLogger(FieldListener::class.java)
     override fun enterPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
         if (ctx == null) return
         parsingContext.insidePropertyDeclaration = true
+    }
+
+    override fun enterModifier(ctx: KotlinParser.ModifierContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        logger.trace("Modifier: ${ctx.text}")
+        modifiers.add(ctx.text)
+        parsingContext.insideModifier = true
     }
 
     override fun exitPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
@@ -33,11 +44,11 @@ class FieldListener : KotlinParserBaseListener() {
         parsingContext.insidePropertyDeclaration = false
 
         attributeDTO = AttributeDTO(fieldName, fieldType, AttributeType.FIELD)
+        attributeDTO!!.addAllModifiers(modifiers)
         methodCallDTO?.let {
             attributeDTO!!.setByMethodCall(it)
         }
-        println(attributeDTO)
-
+        logger.debug("AttributeDTO: {}", attributeDTO)
     }
 
     override fun enterVariableDeclaration(ctx: KotlinParser.VariableDeclarationContext?) {
@@ -93,6 +104,7 @@ class FieldListener : KotlinParserBaseListener() {
             // is set by a method call
             calledMethodName = ctx.text ?: "UNKNOWN"
             wasMethodNameSet = true
+            logger.trace("Called method name: {}", calledMethodName)
         }
     }
 
@@ -130,6 +142,7 @@ class FieldListener : KotlinParserBaseListener() {
                     fieldType = "Long"
                 }
             }
+            logger.trace("Field type: {}", fieldType)
             wasFieldTypeSet = true
         }
     }
@@ -139,6 +152,7 @@ class FieldListener : KotlinParserBaseListener() {
         parsingContext.insideValueArgument = true
         if (parsingContext.insideCallSuffix) {
             calledMethodParameters.add(ctx.text)
+            logger.trace("Called method parameters: {}", calledMethodParameters)
         }
     }
 

@@ -4,8 +4,8 @@ import org.dxworks.kolekt.testpackage.malware.MalwareWriter
 import org.dxworks.kolekt.testpackage.malware.writeMalwareOutside
 
 class TestClass(var age: Int, var name: String) {
-    var address = "Default Address"
-    var phoneNumber: String? = null
+    private var address = "Default Address"
+    protected var phoneNumber: String? = null
     var height: Double = 5.0
     var weight = getWeightValue()
 

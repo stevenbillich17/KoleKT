@@ -1,12 +1,22 @@
 package org.dxworks.kolekt.enums
 
 enum class Modifier {
-    STATIC,
     PUBLIC,
     PRIVATE,
     PROTECTED,
-    DEFAULT,
+    INTERNAL,
     FINAL,
+    OPEN,
     ABSTRACT,
-    SYNCHRONIZED,
+    OVERRIDE,
+    LATEINIT,
+    CONST,
+    TAILREC,
+    INLINE,
+    INFIX,
+    SUSPEND,
+    EXTERNAL,
+    VOLATILE,
+    EXPECT,
+    ACTUAL,
 }

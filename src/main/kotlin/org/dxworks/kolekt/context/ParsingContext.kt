@@ -36,6 +36,7 @@ class ParsingContext {
     var insideFunctionDeclaration: Boolean = false
     var insideFieldDeclaration: Boolean = false
     var insideClassBody: Boolean = false
+    var insideModifier: Boolean = false
 
     var nameAlreadySetForMethod: Boolean = false
     var wasThereAnCallSuffix: Boolean = false
