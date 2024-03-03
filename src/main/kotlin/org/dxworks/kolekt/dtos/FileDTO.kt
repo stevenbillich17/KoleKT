@@ -17,6 +17,22 @@ data class FileDTO(val filePath: String,val fileName: String) {
         functions.addAll(functionsDTOs)
     }
 
+    /**
+     * Returns the full import path for a given short name
+     * or the short name if it's not found
+     */
+    fun getImport(shortName: String): String {
+        for (import in imports) {
+            if (import.endsWith(shortName)) {
+                return import
+            }
+        }
+        if (filePackage != null) {
+            return "$filePackage.$shortName"
+        }
+        return shortName
+    }
+
     override fun toString(): String {
         return "FileDTO(\n" +
                 " filePath='$filePath',\n" +

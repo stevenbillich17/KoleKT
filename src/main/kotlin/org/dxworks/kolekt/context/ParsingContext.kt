@@ -37,6 +37,8 @@ class ParsingContext {
     var insideFieldDeclaration: Boolean = false
     var insideClassBody: Boolean = false
     var insideModifier: Boolean = false
+    var insideAnnotatedDelegationSpecifier: Boolean = false
+    var insideSimpleUserType: Boolean = false
 
     var nameAlreadySetForMethod: Boolean = false
     var wasThereAnCallSuffix: Boolean = false
@@ -56,4 +58,6 @@ class ParsingContext {
     val classesDTOs: MutableList<ClassDTO> = mutableListOf()
     var mutableListOfClassParameters = mutableListOf<AttributeDTO>()
     var mutableListOfAnnotations = mutableListOf<AnnotationDTO>()
+    var superClass: String = ""
+    var implementedInterfaces = mutableListOf<String>()
 }
