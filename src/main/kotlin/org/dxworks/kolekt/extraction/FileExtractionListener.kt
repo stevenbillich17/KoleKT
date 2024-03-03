@@ -69,10 +69,12 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             parsingContext.classDTO!!.classAnnotations.addAll(parsingContext.mutableListOfAnnotations)
             parsingContext.mutableListOfAnnotations.clear()
 
-            parsingContext.classDTO!!.superClass = parsingContext.superClass
+            parsingContext.classDTO!!.superClass = resolveImport(parsingContext.superClass)
             parsingContext.superClass = ""
 
-            parsingContext.classDTO!!.classInterfaces.addAll(parsingContext.implementedInterfaces)
+            parsingContext.implementedInterfaces.forEach {
+                parsingContext.classDTO!!.classInterfaces.add(resolveImport(it))
+            }
             parsingContext.implementedInterfaces.clear()
 
             parsingContext.classesDTOs.add(parsingContext.classDTO!!)
@@ -80,6 +82,17 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
 
         }
         parsingContext.insideClassDeclaration = false
+    }
+
+    private fun resolveImport(shortName: String): String {
+        if (shortName == "") {
+            return shortName
+        }
+        if (shortName.contains(".")) {
+            // is already in form of package.Class
+            return shortName
+        }
+        return fileDTO.getImport(shortName)
     }
 
     override fun enterAnnotatedDelegationSpecifier(ctx: KotlinParser.AnnotatedDelegationSpecifierContext?) {

@@ -46,8 +46,9 @@ class ClassDTO(private val className : String? = null) {
     }
 
     private fun buildClassFieldsString(): String {
-        var result = "\n    "
+        var result = "(\n    "
         classFields.forEach { result += it.toString() + "\n    " }
+        result += ")"
         return result
     }
 
