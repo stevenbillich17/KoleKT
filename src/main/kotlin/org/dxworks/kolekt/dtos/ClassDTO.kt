@@ -10,16 +10,26 @@ class ClassDTO(private val className : String? = null) {
     internal val classFields : MutableList<AttributeDTO> = mutableListOf()
     internal val classAnnotations : MutableList<AnnotationDTO> = mutableListOf()
     internal val classModifiers : MutableList<Modifier> = mutableListOf()
+    internal val classInterfaces : MutableList<String> = mutableListOf()
+    internal var superClass : String = ""
     private val logger = LoggerFactory.getLogger("ClassDTO@$className")
 
     override fun toString(): String {
         return "ClassDTO(\n" +
                 " className='$className',\n" +
                 " classPackage='$classPackage',\n" +
+                " superClass='$superClass',\n" +
+                " classInterfaces=(${buildClassInterfacesString()}),\n" +
                 " classModifiers=(${buildClassModifiersString()}),\n" +
                 " classAnnotations=$classAnnotations, \n" +
                 " classMethods=$classMethods, \n" +
                 " classFields=${buildClassFieldsString()}\n)}"
+    }
+
+    private fun buildClassInterfacesString(): String {
+        var result = "\n    "
+        classInterfaces.forEach { result += "$it\n    " }
+        return result
     }
 
     fun addField(field: AttributeDTO?) {

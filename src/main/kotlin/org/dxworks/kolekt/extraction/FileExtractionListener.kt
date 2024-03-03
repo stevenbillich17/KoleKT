@@ -69,11 +69,61 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             parsingContext.classDTO!!.classAnnotations.addAll(parsingContext.mutableListOfAnnotations)
             parsingContext.mutableListOfAnnotations.clear()
 
+            parsingContext.classDTO!!.superClass = parsingContext.superClass
+            parsingContext.superClass = ""
+
+            parsingContext.classDTO!!.classInterfaces.addAll(parsingContext.implementedInterfaces)
+            parsingContext.implementedInterfaces.clear()
+
             parsingContext.classesDTOs.add(parsingContext.classDTO!!)
             parsingContext.classDTO = null
+
         }
         parsingContext.insideClassDeclaration = false
     }
+
+    override fun enterAnnotatedDelegationSpecifier(ctx: KotlinParser.AnnotatedDelegationSpecifierContext?) {
+        if (ctx == null) return
+        parsingContext.insideAnnotatedDelegationSpecifier = true
+    }
+
+    override fun exitAnnotatedDelegationSpecifier(ctx: KotlinParser.AnnotatedDelegationSpecifierContext?) {
+        if (ctx == null) return
+        parsingContext.insideAnnotatedDelegationSpecifier = false
+    }
+
+    override fun enterConstructorInvocation(ctx: KotlinParser.ConstructorInvocationContext?) {
+        if (ctx == null) return
+        parsingContext.insideConstructorInvocation = true
+    }
+
+    override fun exitConstructorInvocation(ctx: KotlinParser.ConstructorInvocationContext?) {
+        if (ctx == null) return
+        parsingContext.insideConstructorInvocation = false
+    }
+
+    override fun enterSimpleIdentifier(ctx: KotlinParser.SimpleIdentifierContext?) {
+        if (ctx == null) return
+        if (checkForSuperClass()) {
+            logger.trace("Super class: ${ctx.text}")
+            parsingContext.superClass = ctx.text
+        } else if (checkForInterface()) {
+            logger.trace("Interface: ${ctx.text}")
+            parsingContext.implementedInterfaces.add(ctx.text)
+        }
+    }
+
+    override fun enterSimpleUserType(ctx: KotlinParser.SimpleUserTypeContext?) {
+        if (ctx == null) return
+        parsingContext.insideSimpleUserType = true
+    }
+
+    override fun exitSimpleUserType(ctx: KotlinParser.SimpleUserTypeContext?) {
+        if (ctx == null) return
+        parsingContext.insideSimpleUserType = false
+    }
+
+
 
     override fun enterFunctionDeclaration(ctx: KotlinParser.FunctionDeclarationContext?) {
         if (ctx == null) return
@@ -193,6 +243,19 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             logger.debug("Adding class annotation: {}", singleAnnotation)
             parsingContext.mutableListOfAnnotations.add(singleAnnotation)
         }
+    }
+
+
+    private fun checkForSuperClass(): Boolean {
+        return insideClassDeclarationButOutsideBody()
+                && parsingContext.insideAnnotatedDelegationSpecifier
+                && parsingContext.insideConstructorInvocation
+    }
+
+    private fun checkForInterface(): Boolean {
+        return insideClassDeclarationButOutsideBody()
+                && parsingContext.insideAnnotatedDelegationSpecifier
+                && parsingContext.insideSimpleUserType
     }
 
     private fun checkIfClassModifier(): Boolean {
