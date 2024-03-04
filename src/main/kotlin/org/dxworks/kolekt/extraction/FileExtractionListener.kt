@@ -2,6 +2,8 @@ package org.dxworks.kolekt.extraction
 
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.context.ParsingContext
+import org.dxworks.kolekt.details.DictionariesController
+import org.dxworks.kolekt.details.FQNClassesDictionary
 import org.dxworks.kolekt.dtos.*
 import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.listeners.FieldListener
@@ -78,6 +80,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             parsingContext.implementedInterfaces.clear()
 
             parsingContext.classesDTOs.add(parsingContext.classDTO!!)
+            DictionariesController.addClassDTO(parsingContext.classDTO!!)
             parsingContext.classDTO = null
 
         }

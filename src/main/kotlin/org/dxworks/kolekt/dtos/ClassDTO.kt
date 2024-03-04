@@ -4,7 +4,7 @@ import org.dxworks.kolekt.enums.Modifier
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class ClassDTO(private val className : String? = null) {
+class ClassDTO(internal val className : String? = null) {
     internal var classPackage : String? = null
     internal val classMethods : MutableList<MethodDTO> = mutableListOf()
     internal val classFields : MutableList<AttributeDTO> = mutableListOf()
@@ -59,5 +59,10 @@ class ClassDTO(private val className : String? = null) {
         } catch (e: IllegalArgumentException) {
             logger.error("Modifier $modifierString not found")
         }
+    }
+
+    fun getFQN() : String {
+        if (classPackage == null) return className ?: ""
+        return "$classPackage.$className"
     }
 }
