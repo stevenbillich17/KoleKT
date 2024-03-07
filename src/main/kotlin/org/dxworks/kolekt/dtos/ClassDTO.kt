@@ -11,6 +11,7 @@ class ClassDTO(internal val className : String? = null) {
     internal val classAnnotations : MutableList<AnnotationDTO> = mutableListOf()
     internal val classModifiers : MutableList<Modifier> = mutableListOf()
     internal val classInterfaces : MutableList<String> = mutableListOf()
+    internal val typesIFoundInClass = mutableMapOf<String, ClassDTO>()
     internal var superClass : String = ""
     private val logger = LoggerFactory.getLogger("ClassDTO@$className")
 

@@ -3,6 +3,8 @@ package org.dxworks.kolekt
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.details.DictionariesController
+import org.dxworks.kolekt.details.FQNClassesDictionary
 import org.dxworks.kolekt.dtos.FileDTO
 import org.dxworks.kolekt.extraction.FileExtractionListener
 import org.jetbrains.kotlin.spec.grammar.KotlinLexer
@@ -27,6 +29,41 @@ class ProjectExtractor(private val pathToProject: String) {
         readPathToFiles()
         parseFiles()
         printDetailsFromFiles()
+        printInteractiveInferface()
+    }
+
+    fun printInteractiveInferface() {
+        var option = 0
+        while (option != 2) {
+            showMenu()
+            option = readLine()?.toInt() ?: 0
+            when (option) {
+                1 -> enterClassesDtos()
+                2 -> println("Exiting...")
+                else -> println("Invalid option")
+            }
+        }
+    }
+
+    fun showMenu() {
+        println("Menu:")
+        println("1. Enter classes Dtos")
+        println("2. Exit")
+    }
+
+    fun enterClassesDtos() {
+        val optionsMap = mutableMapOf<Int, String>()
+        var option = 0
+        DictionariesController.getFQNClassesDictionary().forEach { (key,) ->
+            optionsMap[option] = key
+            println("$option. $key")
+            option++
+        }
+        println("Choose a class to enter its DTOs")
+        option = readLine()?.toInt() ?: 0
+        val classFQN = optionsMap[option] ?: ""
+        val classDTO = DictionariesController.findClassAfterFQN(classFQN)
+        println(classDTO)
     }
 
     private fun printDetailsFromFiles() {
@@ -62,7 +99,8 @@ class ProjectExtractor(private val pathToProject: String) {
                 filesDTOs.add(fileDTO)
 
             } catch (e : Exception) {
-                logger.error("Exception at parsing file: {$filePath}. With message: {$e}")
+                logger.error("Exception at parsing file: {$filePath}. With message: {$e} stack trace:")
+                e.printStackTrace()
             }
             printProgressBar(i+1, total)
         }

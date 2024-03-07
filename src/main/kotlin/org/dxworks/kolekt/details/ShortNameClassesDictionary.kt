@@ -2,7 +2,7 @@ package org.dxworks.kolekt.details
 
 import org.dxworks.kolekt.dtos.ClassDTO
 
-class ClassesDictionary {
+class ShortNameClassesDictionary {
     private val dict = mutableMapOf<String, ArrayList<ClassDTO>>()
 
     fun addClassDTO(classDTO: ClassDTO) {

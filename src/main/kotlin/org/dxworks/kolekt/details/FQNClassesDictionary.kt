@@ -13,4 +13,8 @@ class FQNClassesDictionary {
         return dict[classFQN]
     }
 
+   fun getDict(): MutableMap<String, ClassDTO> {
+       return dict
+   }
+
 }

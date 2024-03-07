@@ -7,6 +7,7 @@ data class FileDTO(val filePath: String,val fileName: String) {
     internal val classes: MutableList<ClassDTO> = mutableListOf()
     internal val imports: MutableList<String> = mutableListOf()
     internal val functions: MutableList<MethodDTO> = mutableListOf()
+    internal val importNames: MutableMap<String, String> = mutableMapOf()
     internal val importAliases: MutableMap<String, String> = mutableMapOf()
     private val logger = LoggerFactory.getLogger("FileDTO@$fileName")
 
@@ -16,6 +17,10 @@ data class FileDTO(val filePath: String,val fileName: String) {
 
     fun addImport(import: String) {
         this.imports.add(import)
+
+        val lastDot = import.lastIndexOf('.')
+        val importName = import.substring(lastDot + 1)
+        this.importNames[importName] = import
     }
 
     fun addFunctions(functionsDTOs: List<MethodDTO>) {

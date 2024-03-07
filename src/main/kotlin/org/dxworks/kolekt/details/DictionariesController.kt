@@ -3,7 +3,7 @@ package org.dxworks.kolekt.details
 import org.dxworks.kolekt.dtos.ClassDTO
 
 object DictionariesController {
-    private val classesDictionary = ClassesDictionary()
+    private val classesDictionary = ShortNameClassesDictionary()
     private val fqnClassesDictionary = FQNClassesDictionary()
 
     fun addClassDTO(classDTO: ClassDTO) {
@@ -17,5 +17,9 @@ object DictionariesController {
 
     fun findClassAfterFQN(classFQN: String): ClassDTO? {
         return fqnClassesDictionary.findClassDTO(classFQN)
+    }
+
+    fun getFQNClassesDictionary(): MutableMap<String, ClassDTO> {
+        return fqnClassesDictionary.getDict()
     }
 }
