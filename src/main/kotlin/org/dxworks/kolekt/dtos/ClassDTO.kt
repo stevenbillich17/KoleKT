@@ -5,15 +5,15 @@ import org.dxworks.kolekt.enums.Modifier
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class ClassDTO(internal val className : String? = null) {
-    internal var classPackage : String? = null
-    internal var superClass : String = ""
+class ClassDTO(internal val className: String? = null) {
+    internal var classPackage: String? = null
+    internal var superClass: String = ""
 
-    internal val classMethods : MutableList<MethodDTO> = mutableListOf()
-    internal val classFields : MutableList<AttributeDTO> = mutableListOf()
-    internal val classAnnotations : MutableList<AnnotationDTO> = mutableListOf()
-    internal val classModifiers : MutableList<Modifier> = mutableListOf()
-    internal val classInterfaces : MutableList<String> = mutableListOf()
+    internal val classMethods: MutableList<MethodDTO> = mutableListOf()
+    internal val classFields: MutableList<AttributeDTO> = mutableListOf()
+    internal val classAnnotations: MutableList<AnnotationDTO> = mutableListOf()
+    internal val classModifiers: MutableList<Modifier> = mutableListOf()
+    internal val classInterfaces: MutableList<String> = mutableListOf()
 
     // Special types
     // ("org.dxworks.kolekt.notfound")
@@ -69,7 +69,7 @@ class ClassDTO(internal val className : String? = null) {
         }
     }
 
-    fun getFQN() : String {
+    fun getFQN(): String {
         if (classPackage == null) return className ?: ""
         return "$classPackage.$className"
     }
@@ -85,21 +85,16 @@ class ClassDTO(internal val className : String? = null) {
         logger.debug("Analysing class fields")
         classFields.forEach { field ->
             logger.trace("Analysing field ${field.name} with type ${field.type}")
+            val foundType: String = if (field.type == "" && field.isSetByMethodCall) {
+                resolveMethodCallType(field, importsList)
+            } else {
+                discoverFromImportsFQN(field.type, importsList)
+            }
+            field.type = foundType
             if (field.isBasicType()) {
-                logger.trace("Field ${field.name} is basic type")
                 field.setClassDTO(DictionariesController.BASIC_CLASS)
             } else {
-                val foundType: String = if (field.type == "" && field.isSetByMethodCall) {
-                    resolveMethodCallType(field, importsList)
-                } else {
-                    discoverFromImportsFQN(field.type, importsList)
-                }
-                field.type = foundType
-                if (field.isBasicType()) {
-                    field.setClassDTO(DictionariesController.BASIC_CLASS)
-                } else {
-                    tryLinkingType(foundType, field, shouldReturnExternal)
-                }
+                tryLinkingType(foundType, field, shouldReturnExternal)
             }
             logger.debug("FieldDTO: ${field.name} linked to type: ${field.getClassDTO()?.getFQN()}")
         }
@@ -120,7 +115,10 @@ class ClassDTO(internal val className : String? = null) {
         }
     }
 
-    private fun searchTypesInsideClassOrImports(methodCallDTO: MethodCallDTO, importsList: MutableList<String>): String {
+    private fun searchTypesInsideClassOrImports(
+        methodCallDTO: MethodCallDTO,
+        importsList: MutableList<String>
+    ): String {
         // first search in class methods
         for (method in classMethods) {
             if (method.methodName == methodCallDTO.methodName && methodCallDTO.parameters.size == method.methodParameters.size) {
