@@ -31,6 +31,10 @@ data class MethodDTO(val methodName: String) {
         this.methodReturnType = methodReturnType
     }
 
+    fun getMethodReturnType(): String {
+        return methodReturnType
+    }
+
     private fun buildMethodParametersString(): String {
         var result = "\n    "
         methodParameters.forEach { result += it.toString() + "\n    " }

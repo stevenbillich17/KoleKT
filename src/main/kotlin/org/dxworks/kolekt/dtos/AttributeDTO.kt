@@ -5,12 +5,15 @@ import org.dxworks.kolekt.enums.Modifier
 import org.slf4j.LoggerFactory
 import java.util.*
 
-data class AttributeDTO(val name: String, val type: String, val attributeType: AttributeType) {
+data class AttributeDTO(val name: String, var type: String, val attributeType: AttributeType) {
 
-    private var isSetByMethodCall = false
-    private var methodCallDTO: MethodCallDTO? = null
-    private var attributeModifiers: MutableList<Modifier> = mutableListOf()
-    private  val logger = LoggerFactory.getLogger("AttributeDTO@$name")
+    var isSetByMethodCall = false
+    var methodCallDTO: MethodCallDTO? = null
+    var attributeModifiers: MutableList<Modifier> = mutableListOf()
+
+    private var classDTO : ClassDTO? = null
+
+    private val logger = LoggerFactory.getLogger("AttributeDTO@$name")
 
     fun setByMethodCall(methodCallDTO: MethodCallDTO) {
         this.methodCallDTO = methodCallDTO
@@ -45,5 +48,17 @@ data class AttributeDTO(val name: String, val type: String, val attributeType: A
 
     fun addAllModifiers(modifiers: List<String>) {
         modifiers.forEach { addModifier(it) }
+    }
+
+    fun isBasicType() : Boolean {
+        return type in listOf("Bin", "Boolean", "Character", "Double", "Float", "Integer", "Long", "Short", "String", "Hex", "Unsigned", "Int")
+    }
+
+    fun setClassDTO(classDTO: ClassDTO) {
+        this.classDTO = classDTO
+    }
+
+    fun getClassDTO() : ClassDTO? {
+        return classDTO
     }
 }
