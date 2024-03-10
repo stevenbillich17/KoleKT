@@ -1,6 +1,7 @@
 package org.dxworks.kolekt.dtos
 
 import org.dxworks.kolekt.details.DictionariesController
+import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.enums.Modifier
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -114,13 +115,21 @@ class ClassDTO(internal val className: String? = null) {
         val methodCallDTO = field.methodCallDTO
         val methodCallReference = methodCallDTO?.referenceName
 
+        val foundedType: String
         if (methodCallReference == null) {
-            return searchTypesInsideClassOrImports(methodCallDTO!!, importsList)
+            foundedType = searchTypesInsideClassOrImports(methodCallDTO!!, importsList)
+            logger.trace("Founded: $foundedType")
+            return foundedType
         } else {
+            val referenceType = findReferenceType(methodCallReference)
+            //return searchTypeForMethodReturnType(referenceType, methodCallDTO)
             return ""
-//            val referenceType = findReferenceType(methodCallReference)
-//            return searchTypeForMethodReturnType(referenceType, methodCallDTO)
         }
+    }
+
+    private fun findReferenceType(methodCallReference: String): AttributeDTO {
+        logger.trace("Method call reference: $methodCallReference")
+        return AttributeDTO("asd", "asd", AttributeType.FIELD)
     }
 
     private fun searchTypesInsideClassOrImports(
@@ -134,7 +143,7 @@ class ClassDTO(internal val className: String? = null) {
                 return method.getMethodReturnType()
             }
         }
-        // then search in imports todo: treat them better
+        // todo: treat them better with classes
         for (imports in importsList) {
             if (imports.endsWith(methodCallDTO.methodName)) {
                 return imports

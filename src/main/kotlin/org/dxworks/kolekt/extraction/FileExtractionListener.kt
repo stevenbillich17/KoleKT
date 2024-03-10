@@ -42,7 +42,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             val fqnImport = it.identifier().text
             fileDTO.addImport(fqnImport)
             logger.debug("Import: ${it.identifier().text}")
-
+            // todo: fix bug for AppDestroyer alias import inside MalwareDetector
             ctx.importAlias()?.let { importAlias ->
                 fileDTO.addImportAlias(importAlias.simpleIdentifier().text, fqnImport)
             }

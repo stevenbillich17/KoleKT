@@ -11,9 +11,11 @@ class TestClass(var age: Int, var name: String) {
     protected var phoneNumber: String? = null
     var height: Double = 5.0
     val mwWriter: MalwareWriter = MalwareWriter()
+    val counter = mwWriter.initializeInt()
     var weight = getWeightValue()
     var weight2  = aliasTestMalware()
-    var weight3  = testMalwareOutside()
+    var weight3: String  = testMalwareOutside()
+    var weight4 = testMalwareOutside()
 
     private fun getWeightValue(): Double {
         return 5.0
