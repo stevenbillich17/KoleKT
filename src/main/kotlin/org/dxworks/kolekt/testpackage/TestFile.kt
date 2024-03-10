@@ -12,6 +12,7 @@ class TestClass(var age: Int, var name: String) {
     var height: Double = 5.0
     val mwWriter: MalwareWriter = MalwareWriter()
     val counter = mwWriter.initializeInt()
+    val amazingMalware = mwWriter.makeCoolStuff()
     var weight = getWeightValue()
     var weight2  = aliasTestMalware()
     var weight3: String  = testMalwareOutside()

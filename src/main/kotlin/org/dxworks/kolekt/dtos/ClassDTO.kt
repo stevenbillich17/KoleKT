@@ -1,7 +1,6 @@
 package org.dxworks.kolekt.dtos
 
 import org.dxworks.kolekt.details.DictionariesController
-import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.enums.Modifier
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -118,18 +117,37 @@ class ClassDTO(internal val className: String? = null) {
         val foundedType: String
         if (methodCallReference == null) {
             foundedType = searchTypesInsideClassOrImports(methodCallDTO!!, importsList)
-            logger.trace("Founded: $foundedType")
-            return foundedType
         } else {
-            val referenceType = findReferenceType(methodCallReference)
-            //return searchTypeForMethodReturnType(referenceType, methodCallDTO)
-            return ""
+            val foundedField = findField(methodCallReference)
+            foundedType = searchFieldTypeForMethodReturnType(foundedField, methodCallDTO)
         }
+        logger.trace("Founded: $foundedType")
+        return foundedType
     }
 
-    private fun findReferenceType(methodCallReference: String): AttributeDTO {
-        logger.trace("Method call reference: $methodCallReference")
-        return AttributeDTO("asd", "asd", AttributeType.FIELD)
+    private fun searchFieldTypeForMethodReturnType(referenceField: AttributeDTO?, methodCallDTO: MethodCallDTO): String {
+        if (referenceField == null) {
+            return ""
+        }
+        val referenceFieldType = referenceField.type
+        logger.trace("Searching after field type: $referenceFieldType")
+        val classDTO = DictionariesController.findClassAfterFQN(referenceFieldType, false)
+        val methodDTO = classDTO.findMethodBasedOnMethodCall(methodCallDTO)
+        val returnType = methodDTO?.getMethodReturnType()
+        if (returnType != null && !returnType.contains(".")) {
+            return "${classDTO.classPackage}.$returnType"
+        }
+        return returnType ?: ""
+    }
+
+    private fun findField(methodCallReference: String): AttributeDTO? {
+        logger.trace("Try using method call reference:  $methodCallReference")
+        for (field in classFields) {
+            if (field.name == methodCallReference) {
+                return field
+            }
+        }
+        return null
     }
 
     private fun searchTypesInsideClassOrImports(
@@ -176,5 +194,14 @@ class ClassDTO(internal val className: String? = null) {
             }
         }
         return type
+    }
+
+    private fun findMethodBasedOnMethodCall(methodCallDTO: MethodCallDTO): MethodDTO? {
+        for (method in classMethods) {
+            if (method.methodName == methodCallDTO.methodName && methodCallDTO.parameters.size == method.methodParameters.size) {
+                return method
+            }
+        }
+        return null
     }
 }
