@@ -84,25 +84,29 @@ class ClassDTO(internal val className : String? = null) {
     fun analyseClassFields(importsList: MutableList<String>, shouldReturnExternal: Boolean) {
         logger.debug("Analysing class fields")
         classFields.forEach { field ->
-            if (!field.isBasicType()) {
-                // we resolve just for non-basic types
-                var resolvedType = resolveType(field.type, importsList)
-                if (resolvedType == "" && field.isSetByMethodCall) {
-                    resolvedType = resolveMethodCallType(field, importsList)
-                    logger.trace("Found method return type for field set by method call: $resolvedType")
-                    field.type = resolvedType
-                    if (field.isBasicType()) {
-                        logger.trace("Field type is basic type, setting resolvedType to empty string")
-                        resolvedType = ""
-                    }
+            logger.trace("Analysing field ${field.name} with type ${field.type}")
+            if (field.isBasicType()) {
+                logger.trace("Field ${field.name} is basic type")
+                field.setClassDTO(DictionariesController.BASIC_CLASS)
+            } else {
+                val foundType: String = if (field.type == "" && field.isSetByMethodCall) {
+                    resolveMethodCallType(field, importsList)
+                } else {
+                    discoverFromImportsFQN(field.type, importsList)
                 }
-                tryLinkingType(resolvedType, field, shouldReturnExternal)
+                field.type = foundType
+                if (field.isBasicType()) {
+                    field.setClassDTO(DictionariesController.BASIC_CLASS)
+                } else {
+                    tryLinkingType(foundType, field, shouldReturnExternal)
+                }
             }
+            logger.debug("FieldDTO: ${field.name} linked to type: ${field.getClassDTO()?.getFQN()}")
         }
     }
 
     private fun resolveMethodCallType(field: AttributeDTO, importsList: MutableList<String>): String {
-        logger.trace("Resolving method call type for field ${field.name}, methodCallDTO: ${field.methodCallDTO}")
+        logger.trace("Resolving method call type for field {}, methodCallDTO: {}", field.name, field.methodCallDTO)
 
         val methodCallDTO = field.methodCallDTO
         val methodCallReference = methodCallDTO?.referenceName
@@ -117,12 +121,14 @@ class ClassDTO(internal val className : String? = null) {
     }
 
     private fun searchTypesInsideClassOrImports(methodCallDTO: MethodCallDTO, importsList: MutableList<String>): String {
+        // first search in class methods
         for (method in classMethods) {
             if (method.methodName == methodCallDTO.methodName && methodCallDTO.parameters.size == method.methodParameters.size) {
                 // todo: should match the types also
                 return method.getMethodReturnType()
             }
         }
+        // then search in imports todo: treat them better
         for (imports in importsList) {
             if (imports.endsWith(methodCallDTO.methodName)) {
                 return imports
@@ -131,26 +137,24 @@ class ClassDTO(internal val className : String? = null) {
         return ""
     }
 
-    private fun tryLinkingType(resolvedType: String, field: AttributeDTO, shouldReturnExternal: Boolean) {
-        logger.trace("Trying to link field ${field.name}, resolveType: ($resolvedType) ...")
+    private fun tryLinkingType(foundType: String, field: AttributeDTO, shouldReturnExternal: Boolean) {
+        logger.trace("Trying to link field ${field.name}, foundType: ($foundType) ...")
 
-        if (typesFoundInClass.contains(resolvedType)) {
-            typesFoundInClass[resolvedType]?.let { field.setClassDTO(it) }
+        if (typesFoundInClass.contains(foundType)) {
+            typesFoundInClass[foundType]?.let { field.setClassDTO(it) }
 
-            logger.trace("Type $resolvedType found in class, easy peasy")
+            logger.trace("Type $foundType found in class dict, easy peasy")
         } else {
-            val searchedType = DictionariesController.findClassAfterFQN(resolvedType, shouldReturnExternal)
-            typesFoundInClass[resolvedType] = searchedType
+            val searchedType = DictionariesController.findClassAfterFQN(foundType, shouldReturnExternal)
+            typesFoundInClass[foundType] = searchedType
             field.setClassDTO(searchedType)
 
             logger.trace("Searched big dictionary found: ${searchedType.getFQN()}")
         }
-
-        logger.debug("FieldDTO: ${field.name} linked to type: ${field.getClassDTO()?.getFQN()}")
     }
 
-    private fun resolveType(type: String, importsList: List<String>): String {
-        logger.trace("Resolving type ($type)")
+    private fun discoverFromImportsFQN(type: String, importsList: List<String>): String {
+        logger.trace("Search type ($type) in imports")
 
         if (type == "") return ""
         for (import in importsList) {

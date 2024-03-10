@@ -5,8 +5,9 @@ import org.dxworks.kolekt.dtos.ClassDTO
 object DictionariesController {
     private val classesDictionary = ShortNameClassesDictionary()
     private val fqnClassesDictionary = FQNClassesDictionary()
-    private val externalClassDTO = ClassDTO("com.dxworks.kolekt.ExternalClassDTO")
-    private val notFoundYetDTO = ClassDTO("com.dxworks.kolekt.NotFoundYetDTO")
+    public val EXTERNAL_CLASS = ClassDTO("com.dxworks.kolekt.ExternalClassDTO")
+    public val NOT_FOUND_YET_CLASS= ClassDTO("com.dxworks.kolekt.NotFoundYetDTO")
+    public val BASIC_CLASS = ClassDTO("com.dxworks.kolekt.BasicClassDTO")
 
     fun addClassDTO(classDTO: ClassDTO) {
         classesDictionary.addClassDTO(classDTO)
@@ -19,14 +20,11 @@ object DictionariesController {
 
     fun findClassAfterFQN(classFQN: String, shouldReturnExternal: Boolean): ClassDTO {
         return fqnClassesDictionary.findClassDTO(classFQN)
-            ?: return if (shouldReturnExternal) externalClassDTO else notFoundYetDTO
+            ?: return if (shouldReturnExternal) EXTERNAL_CLASS else NOT_FOUND_YET_CLASS
     }
 
     fun getFQNClassesDictionary(): MutableMap<String, ClassDTO> {
         return fqnClassesDictionary.getDict()
     }
 
-    fun EXTERNAL_CLASS(): ClassDTO {
-        return externalClassDTO
-    }
 }
