@@ -3,6 +3,7 @@ package org.dxworks.kolekt
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.binders.ClassBinder
 import org.dxworks.kolekt.details.DictionariesController
 import org.dxworks.kolekt.details.FQNClassesDictionary
 import org.dxworks.kolekt.dtos.ClassDTO
@@ -50,7 +51,7 @@ class ProjectExtractor(private val pathToProject: String) {
     fun showMenu() {
         println("Menu:")
         println("1. Print classes Dtos")
-        println("2. Analyze classes Dtos")
+        println("2. Bind classes Dtos")
         println("3. Exit")
     }
 
@@ -66,7 +67,8 @@ class ProjectExtractor(private val pathToProject: String) {
                 imports.addAll(file.imports)
             }
         }
-        cls.analyse(imports, false)
+        val classBinder = ClassBinder(cls)
+        classBinder.bind(imports, false)
     }
 
     private fun chooseClass(): ClassDTO {

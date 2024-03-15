@@ -6,8 +6,16 @@ import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.LoggerFactory
 import java.util.*
 
-data class AttributeDTO(val name: String, var type: String, val attributeType: AttributeType) {
+class AttributeDTO {
+    constructor (name: String,  type: String, attributeType: AttributeType) {
+        this.name = name.trim()
+        this.type = type.trim()
+        this.attributeType = attributeType
+    }
 
+    var name: String = ""
+    var type: String = ""
+    var attributeType: AttributeType = AttributeType.FIELD
     var isSetByMethodCall = false
     var methodCallDTO: MethodCallDTO? = null
     var attributeModifiers: MutableList<Modifier> = mutableListOf()
