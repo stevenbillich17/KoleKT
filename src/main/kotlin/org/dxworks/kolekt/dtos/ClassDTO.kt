@@ -15,9 +15,6 @@ class ClassDTO(internal val className: String? = null) {
     internal val classModifiers: MutableList<Modifier> = mutableListOf()
     internal val classInterfaces: MutableList<String> = mutableListOf()
 
-    // Special types
-    // ("org.dxworks.kolekt.notfound")
-    // ("org.dxworks.kolekt.external")
     internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
 
     private val logger = LoggerFactory.getLogger("ClassDTO@$className")
@@ -77,8 +74,33 @@ class ClassDTO(internal val className: String? = null) {
     fun analyse(importsList: MutableList<String>, shouldReturnExternal: Boolean) {
         logger.debug("Analysing class $className")
         analyseClassFields(importsList, shouldReturnExternal)
+        analyseClassMethods(importsList, shouldReturnExternal)
+    }
 
-        // todo: analyse class methods (their attribute dtos)
+    private fun analyseClassMethods(importsList: MutableList<String>, shouldReturnExternal: Boolean) {
+        logger.debug("Analysing class methods")
+        classMethods.forEach { method ->
+            logger.trace("Analysing method ${method.methodName}")
+            analyseMethodReturnType(method, importsList, shouldReturnExternal)
+        }
+    }
+
+    private fun analyseMethodReturnType(method: MethodDTO, importsList: MutableList<String>, shouldReturnExternal: Boolean) {
+        var methodReturnType = method.getMethodReturnType()
+        if (method.isBasicReturnType()) {
+            logger.trace("Method ${method.methodName} has basic return type")
+            method.setMethodReturnTypeClassDTO(DictionariesController.BASIC_CLASS)
+        } else {
+            if (!methodReturnType.contains(".")) {
+                methodReturnType = discoverFromImportsFQN(methodReturnType, importsList)
+                if (!methodReturnType.contains(".")) {
+                    methodReturnType = "${classPackage}.$methodReturnType"
+                }
+            }
+            val classDTO = DictionariesController.findClassAfterFQN(methodReturnType, shouldReturnExternal)
+            method.setMethodReturnTypeClassDTO(classDTO)
+        }
+        logger.debug("MethodDTO: ${method.methodName} linked to type: ${method.getMethodReturnTypeClassDTO()?.getFQN()}")
     }
 
     private fun analyseClassFields(importsList: MutableList<String>, shouldReturnExternal: Boolean) {

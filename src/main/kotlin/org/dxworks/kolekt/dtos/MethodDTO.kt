@@ -1,6 +1,7 @@
 package org.dxworks.kolekt.dtos
 
 import org.dxworks.kolekt.enums.Modifier
+import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -10,7 +11,10 @@ data class MethodDTO(val methodName: String) {
     val methodLocalVariables = mutableListOf<AttributeDTO>()
     val methodAnnotations = mutableListOf<AnnotationDTO>()
     val methodModifiers = mutableListOf<Modifier>()
-    private var methodReturnType: String = "void"
+
+    private var methodReturnType: String = "Void"
+    private var methodReturnTypeClassDTO : ClassDTO? = null
+
     private val logger = LoggerFactory.getLogger("ClassDTO@$methodName")
 
 
@@ -76,5 +80,17 @@ data class MethodDTO(val methodName: String) {
         } catch (e: IllegalArgumentException) {
             logger.error("Modifier $modifierString not found")
         }
+    }
+
+    fun setMethodReturnTypeClassDTO(classDTO: ClassDTO) {
+        this.methodReturnTypeClassDTO = classDTO
+    }
+
+    fun getMethodReturnTypeClassDTO() : ClassDTO? {
+        return methodReturnTypeClassDTO
+    }
+
+    fun isBasicReturnType() : Boolean {
+        return ClassTypesUtils.isBasicType(methodReturnType)
     }
 }

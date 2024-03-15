@@ -2,6 +2,7 @@ package org.dxworks.kolekt.dtos
 
 import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.enums.Modifier
+import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -51,7 +52,7 @@ data class AttributeDTO(val name: String, var type: String, val attributeType: A
     }
 
     fun isBasicType() : Boolean {
-        return type in listOf("Bin", "Boolean", "Character", "Double", "Float", "Integer", "Long", "Short", "String", "Hex", "Unsigned", "Int")
+        return ClassTypesUtils.isBasicType(type)
     }
 
     fun setClassDTO(classDTO: ClassDTO) {
