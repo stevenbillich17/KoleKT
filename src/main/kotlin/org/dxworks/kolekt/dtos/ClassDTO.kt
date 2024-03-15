@@ -2,6 +2,7 @@ package org.dxworks.kolekt.dtos
 
 import org.dxworks.kolekt.details.DictionariesController
 import org.dxworks.kolekt.enums.Modifier
+import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -81,7 +82,29 @@ class ClassDTO(internal val className: String? = null) {
         logger.debug("Analysing class methods")
         classMethods.forEach { method ->
             logger.trace("Analysing method ${method.methodName}")
+            analyseMethodParameters(method, importsList, shouldReturnExternal)
             analyseMethodReturnType(method, importsList, shouldReturnExternal)
+            analyseMethodLocalVariables(method, importsList, shouldReturnExternal)
+        }
+    }
+
+    private fun analyseMethodLocalVariables(method: MethodDTO, importsList: MutableList<String>, shouldReturnExternal: Boolean) {
+        logger.debug("Analysing method local variables")
+        method.methodLocalVariables.forEach { variable ->
+            logger.trace("Analysing local variable ${variable.name} with type ${variable.type}")
+            variable.type = searchTypeFQN(variable, importsList)
+            linkType(variable, shouldReturnExternal)
+            logger.debug("Local variable: ${variable.name} linked to type: ${variable.getClassDTO()?.getFQN()}")
+        }
+    }
+
+    private fun analyseMethodParameters(method: MethodDTO, importsList: MutableList<String>, shouldReturnExternal: Boolean) {
+        logger.debug("Analysing method attributes")
+        method.methodParameters.forEach { parameter ->
+            logger.trace("Analysing parameter ${parameter.name} with type ${parameter.type}")
+            parameter.type = searchTypeFQN(parameter, importsList)
+            linkType(parameter, shouldReturnExternal)
+            logger.debug("ParameterDTO: ${parameter.name} linked to type: ${parameter.getClassDTO()?.getFQN()}")
         }
     }
 
@@ -100,7 +123,7 @@ class ClassDTO(internal val className: String? = null) {
             val classDTO = DictionariesController.findClassAfterFQN(methodReturnType, shouldReturnExternal)
             method.setMethodReturnTypeClassDTO(classDTO)
         }
-        logger.debug("MethodDTO: ${method.methodName} linked to type: ${method.getMethodReturnTypeClassDTO()?.getFQN()}")
+        logger.debug("MethodDTO: ${method.methodName} return linked to type: ${method.getMethodReturnTypeClassDTO()?.getFQN()}")
     }
 
     private fun analyseClassFields(importsList: MutableList<String>, shouldReturnExternal: Boolean) {
@@ -124,7 +147,7 @@ class ClassDTO(internal val className: String? = null) {
     private fun searchTypeFQN(
         field: AttributeDTO,
         importsList: MutableList<String>
-    ) = if (field.type == "" && field.isSetByMethodCall) {
+    ) = if ((field.type == "null" || field.type == "") && field.isSetByMethodCall) {
         resolveMethodCallType(field, importsList)
     } else {
         discoverFromImportsFQN(field.type, importsList)
@@ -177,15 +200,19 @@ class ClassDTO(internal val className: String? = null) {
         importsList: MutableList<String>
     ): String {
         // first search in class methods
+        var returnType: String? = null
         for (method in classMethods) {
             if (method.methodName == methodCallDTO.methodName && methodCallDTO.parameters.size == method.methodParameters.size) {
                 // todo: should match the types also
-                return method.getMethodReturnType()
+                returnType = method.getMethodReturnType()
             }
         }
         // todo: treat them better with classes
         for (imports in importsList) {
             if (imports.endsWith(methodCallDTO.methodName)) {
+                return imports
+            }
+            if (returnType != null && imports.endsWith(returnType)) {
                 return imports
             }
         }
