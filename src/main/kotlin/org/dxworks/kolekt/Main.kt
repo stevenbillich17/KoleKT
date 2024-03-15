@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 fun main(args: Array<String>) {
     //runBasicTest()
     val extractor = ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
+    //val extractor = ProjectExtractor("E:\\AA.Faculta\\LICENTA\\W.PROIECTE_DE_ANALIZAT\\stylist-master\\stylist-core\\src\\main")
     extractor.parse()
 }
 

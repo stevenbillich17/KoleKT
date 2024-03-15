@@ -1,13 +1,22 @@
 package org.dxworks.kolekt.testpackage
 
 import org.dxworks.kolekt.testpackage.malware.MalwareWriter
+import org.dxworks.kolekt.testpackage.malware.testMalwareOutside
 import org.dxworks.kolekt.testpackage.malware.writeMalwareOutside
+import org.dxworks.kolekt.testpackage.malware.testMalwareOutside as aliasTestMalware
+
 
 class TestClass(var age: Int, var name: String) {
     private var address = "Default Address"
     protected var phoneNumber: String? = null
     var height: Double = 5.0
+    val mwWriter: MalwareWriter = MalwareWriter()
+    val counter = mwWriter.initializeInt()
+    val amazingMalware = mwWriter.makeCoolStuff()
     var weight = getWeightValue()
+    var weight2  = aliasTestMalware()
+    var weight3: String  = testMalwareOutside()
+    var weight4 = testMalwareOutside()
 
     private fun getWeightValue(): Double {
         return 5.0
@@ -22,12 +31,17 @@ class TestClass(var age: Int, var name: String) {
         outsideFunction()
     }
 
+    fun testReturn(): MalwareWriter {
+        return mwWriter
+    }
+
     fun fun2(m1: String, m2: Double? = 5.0) {
         val x = "Hello"
 
         val xTurbat = 5
         var y: String? = null
         val z = MalwareWriter()
+        val cpyMwWriter = testReturn()
         z.writeMalware()
         z.writeMalwareWithParameters("ceva", "altceva")
         writeMalwareOutside("ceva" + "wow", "altceva")

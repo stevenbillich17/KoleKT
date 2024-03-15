@@ -2,6 +2,8 @@ package org.dxworks.kolekt.extraction
 
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.context.ParsingContext
+import org.dxworks.kolekt.details.DictionariesController
+import org.dxworks.kolekt.details.FQNClassesDictionary
 import org.dxworks.kolekt.dtos.*
 import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.listeners.FieldListener
@@ -37,7 +39,13 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
 
     override fun enterImportHeader(ctx: KotlinParser.ImportHeaderContext?) {
         ctx?.let {
-            fileDTO.addImport(it.identifier().text)
+            val fqnImport = it.identifier().text
+            fileDTO.addImport(fqnImport)
+            logger.debug("Import: ${it.identifier().text}")
+            // todo: fix bug for AppDestroyer alias import inside MalwareDetector
+            ctx.importAlias()?.let { importAlias ->
+                fileDTO.addImportAlias(importAlias.simpleIdentifier().text, fqnImport)
+            }
         }
     }
 
@@ -78,6 +86,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             parsingContext.implementedInterfaces.clear()
 
             parsingContext.classesDTOs.add(parsingContext.classDTO!!)
+            DictionariesController.addClassDTO(parsingContext.classDTO!!)
             parsingContext.classDTO = null
 
         }
