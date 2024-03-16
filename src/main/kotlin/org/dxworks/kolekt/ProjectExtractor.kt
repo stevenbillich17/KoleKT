@@ -34,6 +34,11 @@ class ProjectExtractor(private val pathToProject: String) {
         printInteractiveInferface()
     }
 
+    fun simpleParse() {
+        readPathToFiles()
+        parseFiles()
+    }
+
     fun printInteractiveInferface() {
         var option = 0
         while (option != 3) {
@@ -69,6 +74,16 @@ class ProjectExtractor(private val pathToProject: String) {
         }
         val classBinder = ClassBinder(cls)
         classBinder.bind(imports, false)
+    }
+
+    fun bindAllClasses() {
+        filesDTOs.forEach { fileDTO ->
+            val imports = fileDTO.imports
+            fileDTO.classes.forEach { classDTO ->
+                val classBinder = ClassBinder(classDTO)
+                classBinder.bind(imports, false)
+            }
+        }
     }
 
     private fun chooseClass(): ClassDTO {

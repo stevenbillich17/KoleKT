@@ -1,6 +1,6 @@
 package org.dxworks.kolekt.dtos
 
-class AnnotationDTO (private val annotationName: String){
+class AnnotationDTO (val annotationName: String){
     private val annotationParameters = mutableListOf<String>()
 
     fun addParameter(parameter: String) {
