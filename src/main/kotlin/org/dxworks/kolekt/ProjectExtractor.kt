@@ -3,11 +3,12 @@ package org.dxworks.kolekt
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.binders.ClassBinder
 import org.dxworks.kolekt.details.DictionariesController
-import org.dxworks.kolekt.details.FQNClassesDictionary
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.FileDTO
 import org.dxworks.kolekt.extraction.FileExtractionListener
+import org.dxworks.kolekt.serialization.KoleSerializer
 import org.jetbrains.kotlin.spec.grammar.KotlinLexer
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParser.KotlinFileContext
@@ -33,32 +34,44 @@ class ProjectExtractor(private val pathToProject: String) {
         printInteractiveInferface()
     }
 
+    fun simpleParse() {
+        readPathToFiles()
+        parseFiles()
+    }
+
     fun printInteractiveInferface() {
         var option = 0
-        while (option != 3) {
+        while (option != 4) {
             showMenu()
             option = readLine()?.toInt() ?: 0
             when (option) {
                 1 -> enterClassesDtos()
-                2 -> analyzeClasses()
-                3 -> println("Exiting")
+                2 -> bindClasses()
+                3 -> exportClasses()
+                4 -> println("Exiting")
                 else -> println("Invalid option")
             }
         }
     }
 
+    private fun exportClasses() {
+        val cls = chooseClass()
+        println(KoleSerializer.serialize(cls))
+    }
+
     fun showMenu() {
         println("Menu:")
         println("1. Print classes Dtos")
-        println("2. Analyze classes Dtos")
-        println("3. Exit")
+        println("2. Bind classes Dtos")
+        println("3. Serialize classes Dtos")
+        println("4. Exit")
     }
 
     fun enterClassesDtos() {
         println(chooseClass())
     }
 
-    private fun analyzeClasses() {
+    private fun bindClasses() {
         val cls = chooseClass()
         val imports = mutableListOf<String>()
         for (file in filesDTOs) {
@@ -66,7 +79,18 @@ class ProjectExtractor(private val pathToProject: String) {
                 imports.addAll(file.imports)
             }
         }
-        cls.analyse(imports, false)
+        val classBinder = ClassBinder(cls)
+        classBinder.bind(imports, false)
+    }
+
+    fun bindAllClasses() {
+        filesDTOs.forEach { fileDTO ->
+            val imports = fileDTO.imports
+            fileDTO.classes.forEach { classDTO ->
+                val classBinder = ClassBinder(classDTO)
+                classBinder.bind(imports, false)
+            }
+        }
     }
 
     private fun chooseClass(): ClassDTO {

@@ -1,10 +1,13 @@
 package org.dxworks.kolekt.dtos
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.dxworks.kolekt.enums.Modifier
 import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.LoggerFactory
 import java.util.*
 
+@Serializable
 data class MethodDTO(val methodName: String) {
     val methodParameters = mutableListOf<AttributeDTO>()
     val methodCalls = mutableListOf<MethodCallDTO>()
@@ -15,6 +18,7 @@ data class MethodDTO(val methodName: String) {
     private var methodReturnType: String = "Void"
     private var methodReturnTypeClassDTO : ClassDTO? = null
 
+    @Transient
     private val logger = LoggerFactory.getLogger("ClassDTO@$methodName")
 
 

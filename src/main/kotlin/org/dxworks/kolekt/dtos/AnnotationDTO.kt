@@ -1,6 +1,9 @@
 package org.dxworks.kolekt.dtos
 
-class AnnotationDTO (private val annotationName: String){
+import kotlinx.serialization.Serializable
+
+@Serializable
+class AnnotationDTO (val annotationName: String){
     private val annotationParameters = mutableListOf<String>()
 
     fun addParameter(parameter: String) {

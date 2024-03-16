@@ -16,7 +16,20 @@ object ClassTypesUtils {
             "Hex",
             "Unsigned",
             "Int",
-            "Void"
+            "Void",
+            "Bin?",
+            "Boolean?",
+            "Character?",
+            "Double?",
+            "Float?",
+            "Integer?",
+            "Long?",
+            "Short?",
+            "String?",
+            "Hex?",
+            "Unsigned?",
+            "Int?",
+            "Void?"
         )
     }
 }
