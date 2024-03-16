@@ -20,6 +20,18 @@ class TestForTestPackage {
         testMalwareDetector()
         testMalwareWriter()
         testTestClass()
+        testDifferentTypeOfClasses()
+    }
+
+    private fun testDifferentTypeOfClasses() {
+        val dataClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.DataClazz", false)
+        assertEquals("DataClazz", dataClazz.className)
+
+        // object class
+        val objectClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.ObjectClazz", false)
+        assertEquals("ObjectClazz", objectClazz.className)
+        assertEquals("org.dxworks.kolekt.testpackage.classes", objectClazz.classPackage)
+        assertEquals("org.dxworks.kolekt.testpackage.classes.ObjectClazz", objectClazz.getFQN())
     }
 
     private fun testMalwareWriter() {

@@ -93,6 +93,38 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         parsingContext.insideClassDeclaration = false
     }
 
+    override fun enterObjectDeclaration(ctx: KotlinParser.ObjectDeclarationContext?) {
+        if (ctx == null) return
+        parsingContext.classDTO =  ClassDTO(ctx.simpleIdentifier().text)
+        parsingContext.classDTO!!.classPackage = fileDTO.filePackage
+        parsingContext.insideClassDeclaration = true
+    }
+
+    override fun exitObjectDeclaration(ctx: KotlinParser.ObjectDeclarationContext?) {
+        ctx?.let {
+            if (fileDTO.filePackage == null) {
+                fileDTO.filePackage = "UNKNOWN"
+            }
+
+            parsingContext.classDTO!!.classAnnotations.addAll(parsingContext.mutableListOfAnnotations)
+            parsingContext.mutableListOfAnnotations.clear()
+
+            parsingContext.classDTO!!.superClass = resolveImport(parsingContext.superClass)
+            parsingContext.superClass = ""
+
+            parsingContext.implementedInterfaces.forEach {
+                parsingContext.classDTO!!.classInterfaces.add(resolveImport(it))
+            }
+            parsingContext.implementedInterfaces.clear()
+
+            parsingContext.classesDTOs.add(parsingContext.classDTO!!)
+            DictionariesController.addClassDTO(parsingContext.classDTO!!)
+            parsingContext.classDTO = null
+
+        }
+        parsingContext.insideClassDeclaration = false
+    }
+
     private fun resolveImport(shortName: String): String {
         if (shortName == "") {
             return shortName

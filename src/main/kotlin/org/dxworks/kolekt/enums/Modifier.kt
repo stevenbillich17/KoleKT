@@ -19,4 +19,5 @@ enum class Modifier {
     VOLATILE,
     EXPECT,
     ACTUAL,
+    ENUM,
 }
