@@ -1,11 +1,14 @@
 package org.dxworks.kolekt.dtos
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.enums.Modifier
 import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.LoggerFactory
 import java.util.*
 
+@Serializable
 class AttributeDTO {
     constructor (name: String,  type: String, attributeType: AttributeType) {
         this.name = name.trim()
@@ -22,6 +25,7 @@ class AttributeDTO {
 
     private var classDTO : ClassDTO? = null
 
+    @Transient
     private val logger = LoggerFactory.getLogger("AttributeDTO@$name")
 
     fun setByMethodCall(methodCallDTO: MethodCallDTO) {

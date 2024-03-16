@@ -1,11 +1,12 @@
 package org.dxworks.kolekt.dtos
 
-import org.dxworks.kolekt.details.DictionariesController
 import org.dxworks.kolekt.enums.Modifier
-import org.dxworks.kolekt.utils.ClassTypesUtils
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.slf4j.LoggerFactory
 import java.util.*
 
+@Serializable
 class ClassDTO(internal val className: String? = null) {
     internal var classPackage: String? = null
     internal var superClass: String = ""
@@ -18,6 +19,7 @@ class ClassDTO(internal val className: String? = null) {
 
     internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
 
+    @Transient
     private val logger = LoggerFactory.getLogger("ClassDTO@$className")
 
     override fun toString(): String {
