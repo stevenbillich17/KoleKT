@@ -5,56 +5,57 @@ import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.dtos.MethodDTO
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class ClassBinder(val classDTO: ClassDTO) {
+class ClassBinder(private val classDTO: ClassDTO) {
 
-    val logger = LoggerFactory.getLogger("ClassBinder@${classDTO.className}")
+    val logger: Logger = LoggerFactory.getLogger("ClassBinder@${classDTO.className}")
+    private var importsList: MutableList<String> = mutableListOf()
+    private var shouldReturnExternal: Boolean = false
 
     fun bind(importsList: MutableList<String>, shouldReturnExternal: Boolean) {
         logger.debug("Binding class")
-        bindClassFields(importsList, shouldReturnExternal)
-        bindClassMethods(importsList, shouldReturnExternal)
+        this.importsList = importsList
+        this.shouldReturnExternal = shouldReturnExternal
+        bindClassFields()
+        bindClassMethods()
     }
 
-    private fun bindClassMethods(importsList: MutableList<String>, shouldReturnExternal: Boolean) {
-        logger.debug("Binding class methods")
+    private fun bindClassMethods() {
         classDTO.classMethods.forEach { method ->
             logger.trace("Binding method ${method.methodName}")
-            bindMethodParameters(method, importsList, shouldReturnExternal)
-            bindMethodReturnType(method, importsList, shouldReturnExternal)
-            bindMethodLocalVariables(method, importsList, shouldReturnExternal)
+            bindMethodParameters(method)
+            bindMethodReturnType(method)
+            bindMethodLocalVariables(method)
         }
     }
 
-    private fun bindMethodLocalVariables(method: MethodDTO, importsList: MutableList<String>, shouldReturnExternal: Boolean) {
-        logger.debug("Binding method local variables")
+    private fun bindMethodLocalVariables(method: MethodDTO) {
         method.methodLocalVariables.forEach { variable ->
             logger.trace("Binding local variable ${variable.name} with type ${variable.type}")
-            variable.type = searchTypeFQN(variable, importsList)
-            linkType(variable, shouldReturnExternal)
+            variable.type = searchTypeFQN(variable) // todo: should also search local variables
+            linkType(variable)
             logger.debug("Local variable: ${variable.name} linked to type: ${variable.getClassDTO()?.getFQN()}")
         }
     }
 
-    private fun bindMethodParameters(method: MethodDTO, importsList: MutableList<String>, shouldReturnExternal: Boolean) {
-        logger.debug("Binding method attributes")
+    private fun bindMethodParameters(method: MethodDTO) {
         method.methodParameters.forEach { parameter ->
             logger.trace("Binding parameter ${parameter.name} with type ${parameter.type}")
-            parameter.type = searchTypeFQN(parameter, importsList)
-            linkType(parameter, shouldReturnExternal)
+            parameter.type = searchTypeFQN(parameter)
+            linkType(parameter)
             logger.debug("ParameterDTO: ${parameter.name} linked to type: ${parameter.getClassDTO()?.getFQN()}")
         }
     }
 
-    private fun bindMethodReturnType(method: MethodDTO, importsList: MutableList<String>, shouldReturnExternal: Boolean) {
+    private fun bindMethodReturnType(method: MethodDTO) {
         var methodReturnType = method.getMethodReturnType()
         if (method.isBasicReturnType()) {
-            logger.trace("Method ${method.methodName} has basic return type")
             method.setMethodReturnTypeClassDTO(DictionariesController.BASIC_CLASS)
         } else {
             if (!methodReturnType.contains(".")) {
-                methodReturnType = discoverFromImportsFQN(methodReturnType, importsList)
+                methodReturnType = searchImports(methodReturnType)
                 if (!methodReturnType.contains(".")) {
                     methodReturnType = "${classDTO.classPackage}.$methodReturnType"
                 }
@@ -65,34 +66,33 @@ class ClassBinder(val classDTO: ClassDTO) {
         logger.debug("MethodDTO: ${method.methodName} return linked to type: ${method.getMethodReturnTypeClassDTO()?.getFQN()}")
     }
 
-    private fun bindClassFields(importsList: MutableList<String>, shouldReturnExternal: Boolean) {
+    private fun bindClassFields() {
         logger.debug("Binding class fields")
         classDTO.classFields.forEach { field ->
             logger.trace("Binding field ${field.name} with type ${field.type}")
-            field.type = searchTypeFQN(field, importsList)
-            linkType(field, shouldReturnExternal)
+            field.type = searchTypeFQN(field)
+            linkType(field)
             logger.debug("FieldDTO: ${field.name} linked to type: ${field.getClassDTO()?.getFQN()}")
         }
     }
 
-    private fun linkType(field: AttributeDTO, shouldReturnExternal: Boolean) {
+    private fun linkType(field: AttributeDTO) {
         if (field.isBasicType()) {
             field.setClassDTO(DictionariesController.BASIC_CLASS)
         } else {
-            tryLinkingType(field, shouldReturnExternal)
+            tryLinkingType(field)
         }
     }
 
     private fun searchTypeFQN(
         field: AttributeDTO,
-        importsList: MutableList<String>
     ) = if ((field.type == "null" || field.type == "") && field.isSetByMethodCall) {
-        resolveMethodCallType(field, importsList)
+        resolveMethodCallType(field)
     } else {
-        discoverFromImportsFQN(field.type, importsList)
+        searchImports(field.type)
     }
 
-    private fun resolveMethodCallType(field: AttributeDTO, importsList: MutableList<String>): String {
+    private fun resolveMethodCallType(field: AttributeDTO): String {
         logger.trace("Resolving method call type for field {}, methodCallDTO: {}", field.name, field.methodCallDTO)
 
         val methodCallDTO = field.methodCallDTO
@@ -100,7 +100,7 @@ class ClassBinder(val classDTO: ClassDTO) {
 
         val foundedType: String
         if (methodCallReference == null) {
-            foundedType = searchTypesInsideClassOrImports(methodCallDTO!!, importsList)
+            foundedType = searchTypesInsideClassOrImports(methodCallDTO!!)
         } else {
             val foundedField = findField(methodCallReference)
             foundedType = searchFieldTypeForMethodReturnType(foundedField, methodCallDTO)
@@ -136,7 +136,6 @@ class ClassBinder(val classDTO: ClassDTO) {
 
     private fun searchTypesInsideClassOrImports(
         methodCallDTO: MethodCallDTO,
-        importsList: MutableList<String>
     ): String {
         // first search in class methods
         var returnType: String? = null
@@ -158,7 +157,7 @@ class ClassBinder(val classDTO: ClassDTO) {
         return ""
     }
 
-    private fun tryLinkingType(field: AttributeDTO, shouldReturnExternal: Boolean) {
+    private fun tryLinkingType(field: AttributeDTO) {
         logger.trace("Trying to link field ${field.name}, foundType: (${field.type}) ...")
 
         if (classDTO.typesFoundInClass.contains(field.type)) {
@@ -172,7 +171,7 @@ class ClassBinder(val classDTO: ClassDTO) {
         }
     }
 
-    private fun discoverFromImportsFQN(type: String, importsList: List<String>): String {
+    private fun searchImports(type: String): String {
         logger.trace("Search type ($type) in imports")
 
         if (type == "") return ""
