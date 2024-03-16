@@ -1,6 +1,7 @@
 package org.dxworks.kolekt.extraction
 
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.antlr.v4.runtime.tree.TerminalNode
 import org.dxworks.kolekt.context.ParsingContext
 import org.dxworks.kolekt.details.DictionariesController
 import org.dxworks.kolekt.details.FQNClassesDictionary
@@ -72,6 +73,39 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                     )
                     parsingContext.classDTO!!.classFields.add(field)
                 }
+            }
+
+            parsingContext.classDTO!!.classAnnotations.addAll(parsingContext.mutableListOfAnnotations)
+            parsingContext.mutableListOfAnnotations.clear()
+
+            parsingContext.classDTO!!.superClass = resolveImport(parsingContext.superClass)
+            parsingContext.superClass = ""
+
+            parsingContext.implementedInterfaces.forEach {
+                parsingContext.classDTO!!.classInterfaces.add(resolveImport(it))
+            }
+            parsingContext.implementedInterfaces.clear()
+
+            parsingContext.classesDTOs.add(parsingContext.classDTO!!)
+            DictionariesController.addClassDTO(parsingContext.classDTO!!)
+            parsingContext.classDTO = null
+
+        }
+        parsingContext.insideClassDeclaration = false
+    }
+
+    override fun enterObjectDeclaration(ctx: KotlinParser.ObjectDeclarationContext?) {
+        if (ctx == null) return
+        parsingContext.classDTO =  ClassDTO(ctx.simpleIdentifier().text)
+        parsingContext.classDTO!!.setToObjectType()
+        parsingContext.classDTO!!.classPackage = fileDTO.filePackage
+        parsingContext.insideClassDeclaration = true
+    }
+
+    override fun exitObjectDeclaration(ctx: KotlinParser.ObjectDeclarationContext?) {
+        ctx?.let {
+            if (fileDTO.filePackage == null) {
+                fileDTO.filePackage = "UNKNOWN"
             }
 
             parsingContext.classDTO!!.classAnnotations.addAll(parsingContext.mutableListOfAnnotations)
@@ -265,6 +299,20 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             logger.debug("Adding class annotation: {}", singleAnnotation)
             parsingContext.mutableListOfAnnotations.add(singleAnnotation)
         }
+    }
+
+    override fun visitTerminal(node: TerminalNode?) {
+        if (node == null) return
+        if (checkIfInterfaceDeclaration()) {
+            if (node.text == "interface") {
+                parsingContext.classDTO!!.setToInterfaceType()
+            }
+        }
+    }
+
+    private fun checkIfInterfaceDeclaration(): Boolean {
+        return parsingContext.insideClassDeclaration
+                && !parsingContext.insideClassBody
     }
 
 
