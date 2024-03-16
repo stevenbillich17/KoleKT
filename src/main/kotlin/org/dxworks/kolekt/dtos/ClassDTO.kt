@@ -3,6 +3,8 @@ package org.dxworks.kolekt.dtos
 import org.dxworks.kolekt.enums.Modifier
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import org.dxworks.kolekt.enums.ClassTypes
+import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -10,6 +12,7 @@ import java.util.*
 class ClassDTO(internal val className: String? = null) {
     internal var classPackage: String? = null
     internal var superClass: String = ""
+    internal var classType: ClassTypes = ClassTypes.CLASS
 
     internal val classMethods: MutableList<MethodDTO> = mutableListOf()
     internal val classFields: MutableList<AttributeDTO> = mutableListOf()
@@ -27,6 +30,7 @@ class ClassDTO(internal val className: String? = null) {
                 " className='$className',\n" +
                 " classPackage='$classPackage',\n" +
                 " superClass='$superClass',\n" +
+                " classType=$classType,\n" +
                 " classInterfaces=(${buildClassInterfacesString()}),\n" +
                 " classModifiers=(${buildClassModifiersString()}),\n" +
                 " classAnnotations=$classAnnotations, \n" +
@@ -61,7 +65,14 @@ class ClassDTO(internal val className: String? = null) {
     }
 
     fun addModifier(modifierString: String) {
+        if (className == "AnnotationClazz") {
+            println("Adding modifier: $modifierString")
+        }
         try {
+            val classType = ClassTypesUtils.getClassType(modifierString)
+            if (classType != ClassTypes.CLASS)  {
+                this.classType = ClassTypesUtils.getClassType(modifierString)
+            }
             val modifier = Modifier.valueOf(modifierString.uppercase(Locale.getDefault()))
             classModifiers.add(modifier)
         } catch (e: IllegalArgumentException) {
@@ -81,6 +92,14 @@ class ClassDTO(internal val className: String? = null) {
             }
         }
         return null
+    }
+
+    fun setToObjectType() {
+        classType = ClassTypes.OBJECT
+    }
+
+    fun setToInterfaceType() {
+        classType = ClassTypes.INTERFACE
     }
 
 }

@@ -2,6 +2,7 @@ package runnables
 
 import org.dxworks.kolekt.ProjectExtractor
 import org.dxworks.kolekt.details.DictionariesController
+import org.dxworks.kolekt.enums.ClassTypes
 import org.dxworks.kolekt.enums.Modifier
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,14 +25,35 @@ class TestForTestPackage {
     }
 
     private fun testDifferentTypeOfClasses() {
+        // data class
         val dataClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.DataClazz", false)
-        assertEquals("DataClazz", dataClazz.className)
+        val classTypeData = dataClazz.classType
+        assertEquals(ClassTypes.DATA, classTypeData)
 
         // object class
         val objectClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.ObjectClazz", false)
-        assertEquals("ObjectClazz", objectClazz.className)
-        assertEquals("org.dxworks.kolekt.testpackage.classes", objectClazz.classPackage)
-        assertEquals("org.dxworks.kolekt.testpackage.classes.ObjectClazz", objectClazz.getFQN())
+        val classType = objectClazz.classType
+        assertEquals(ClassTypes.OBJECT, classType)
+
+        // enum class
+        val enumClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.EnumClazz", false)
+        val classTypeEnum = enumClazz.classType
+        assertEquals(ClassTypes.ENUM, classTypeEnum)
+
+        // annotation class
+        val annotationClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.AnnotationClazz", false)
+        val classTypeAnnotation = annotationClazz.classType
+        assertEquals(ClassTypes.ANNOTATION, classTypeAnnotation)
+
+        // interface class
+        val interfaceClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.InterfaceClazz", false)
+        val classTypeInterface = interfaceClazz.classType
+        assertEquals(ClassTypes.INTERFACE, classTypeInterface)
+
+        // basic class
+        val basicClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.BasicClazz", false)
+        val classTypeBasic = basicClazz.classType
+        assertEquals(ClassTypes.CLASS, classTypeBasic)
     }
 
     private fun testMalwareWriter() {

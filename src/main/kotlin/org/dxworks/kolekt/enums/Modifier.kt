@@ -20,4 +20,7 @@ enum class Modifier {
     EXPECT,
     ACTUAL,
     ENUM,
+    ANNOTATION,
+    DATA,
+    INTERFACE,
 }

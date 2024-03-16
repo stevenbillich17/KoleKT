@@ -1,4 +1,3 @@
 package org.dxworks.kolekt.testpackage.classes
 
-class DataClazz {
-}
+data class DataClazz(val name: String, val age: Int)
