@@ -10,7 +10,6 @@ import kotlin.test.assertTrue
 
 class TestForTestPackage {
 
-
     @Test
     fun runTestForPackage() {
         val extractor = ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
@@ -22,6 +21,33 @@ class TestForTestPackage {
         testMalwareWriter()
         testTestClass()
         testDifferentTypeOfClasses()
+        testInheritance()
+    }
+
+    private fun testInheritance() {
+        val farAwayAunt = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance_second.FarAwayAunt", false)
+        val farAwayAuntNephew = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.FarAwayAuntNephew", false)
+        assertEquals(farAwayAunt.getFQN(), farAwayAuntNephew.superClassDTO?.getFQN())
+        val farAwayAuntSubClasses = farAwayAunt.mutableListOfSubClasses
+        assertTrue(farAwayAuntSubClasses.any { it.getFQN() == farAwayAuntNephew.getFQN() })
+
+
+        val son = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.Son", false)
+        val parent = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.Parent", false)
+        val grandparent = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.Grandparent", false)
+        val sonBrother = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.SonBrother", false)
+        assertEquals(parent, son.superClassDTO)
+        assertEquals(grandparent, parent.superClassDTO)
+
+        // find grandparent sub classes
+        val grandparentSubClasses = grandparent.mutableListOfSubClasses
+        assertTrue(grandparentSubClasses.any { it == parent })
+
+        // find parent sub classes
+        val fatherSubClasses = parent.mutableListOfSubClasses
+        assertTrue(fatherSubClasses.any { it == son })
+        assertTrue { fatherSubClasses.any { it == sonBrother } }
+
     }
 
     private fun testDifferentTypeOfClasses() {

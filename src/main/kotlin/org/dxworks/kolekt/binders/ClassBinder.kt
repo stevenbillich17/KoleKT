@@ -20,6 +20,21 @@ class ClassBinder(private val classDTO: ClassDTO) {
         this.shouldReturnExternal = shouldReturnExternal
         bindClassFields()
         bindClassMethods()
+        bindClassSuperClass()
+        // todo: add binding for interfaces
+    }
+
+    private fun bindClassSuperClass() {
+        logger.debug("Binding class super class")
+        val superClass = classDTO.superClass
+        if (superClass != "") {
+            val superClassDTO = DictionariesController.findClassAfterFQN(superClass, true)
+            if (superClassDTO != DictionariesController.EXTERNAL_CLASS) {
+                classDTO.superClassDTO = superClassDTO
+                superClassDTO.addSubClass(classDTO)
+                logger.debug("Super class linked to type: ${classDTO.superClassDTO?.getFQN()}")
+            }
+        }
     }
 
     private fun bindClassMethods() {
