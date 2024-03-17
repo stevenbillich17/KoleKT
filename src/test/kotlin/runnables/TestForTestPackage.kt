@@ -35,6 +35,7 @@ class TestForTestPackage {
         val son = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.Son", false)
         val parent = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.Parent", false)
         val grandparent = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.Grandparent", false)
+        val sonBrother = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.inheritance.SonBrother", false)
         assertEquals(parent, son.superClassDTO)
         assertEquals(grandparent, parent.superClassDTO)
 
@@ -45,6 +46,7 @@ class TestForTestPackage {
         // find parent sub classes
         val fatherSubClasses = parent.mutableListOfSubClasses
         assertTrue(fatherSubClasses.any { it == son })
+        assertTrue { fatherSubClasses.any { it == sonBrother } }
 
     }
 
