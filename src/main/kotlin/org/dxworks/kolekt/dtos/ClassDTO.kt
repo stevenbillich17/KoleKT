@@ -12,6 +12,7 @@ import java.util.*
 class ClassDTO(internal val className: String? = null) {
     internal var classPackage: String? = null
     internal var superClass: String = ""
+    internal var classSubClassesNames: MutableList<String> = mutableListOf()
     internal var classType: ClassTypes = ClassTypes.CLASS
 
     internal val classMethods: MutableList<MethodDTO> = mutableListOf()
@@ -23,6 +24,11 @@ class ClassDTO(internal val className: String? = null) {
     internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
 
     @Transient
+    var superClassDTO: ClassDTO? = null
+    @Transient
+    val mutableListOfSubClasses = mutableListOf<ClassDTO>()
+
+    @Transient
     private val logger = LoggerFactory.getLogger("ClassDTO@$className")
 
     override fun toString(): String {
@@ -30,6 +36,7 @@ class ClassDTO(internal val className: String? = null) {
                 " className='$className',\n" +
                 " classPackage='$classPackage',\n" +
                 " superClass='$superClass',\n" +
+                " classSubClassesNames=${buildSubClassesString()},\n" +
                 " classType=$classType,\n" +
                 " classInterfaces=(${buildClassInterfacesString()}),\n" +
                 " classModifiers=(${buildClassModifiersString()}),\n" +
@@ -41,6 +48,12 @@ class ClassDTO(internal val className: String? = null) {
     private fun buildClassInterfacesString(): String {
         var result = "\n    "
         classInterfaces.forEach { result += "$it\n    " }
+        return result
+    }
+
+    private fun buildSubClassesString(): String {
+        var result = "\n    "
+        classSubClassesNames.forEach { result += "$it\n    " }
         return result
     }
 
@@ -100,6 +113,12 @@ class ClassDTO(internal val className: String? = null) {
 
     fun setToInterfaceType() {
         classType = ClassTypes.INTERFACE
+    }
+
+    fun addSubClass(classDTO: ClassDTO) {
+        classSubClassesNames.add(classDTO.getFQN())
+        mutableListOfSubClasses.add(classDTO)
+        logger.debug("Added sub class: ${classDTO.getFQN()}")
     }
 
 }
