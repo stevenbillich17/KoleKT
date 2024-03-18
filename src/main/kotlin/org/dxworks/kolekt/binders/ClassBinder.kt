@@ -5,6 +5,7 @@ import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.dtos.MethodDTO
+import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -71,9 +72,9 @@ class ClassBinder(private val classDTO: ClassDTO) {
         } else {
             if (!methodReturnType.contains(".")) {
                 methodReturnType = searchImports(methodReturnType)
-                if (!methodReturnType.contains(".")) {
-                    methodReturnType = "${classDTO.classPackage}.$methodReturnType"
-                }
+//                if (!methodReturnType.contains(".")) {
+//                    methodReturnType = "${classDTO.classPackage}.$methodReturnType"
+//                }
             }
             val classDTO = DictionariesController.findClassAfterFQN(methodReturnType, shouldReturnExternal)
             method.setMethodReturnTypeClassDTO(classDTO)
@@ -169,6 +170,15 @@ class ClassBinder(private val classDTO: ClassDTO) {
                 return imports
             }
         }
+        // searching if the method name is a constructor for other classes
+        val classDTOs = DictionariesController.findClassesInSamePackage(classDTO.classPackage)
+        for (cls in classDTOs) {
+            for (method in cls.classMethods) {
+                if (method.methodName == methodCallDTO.methodName && methodCallDTO.parameters.size == method.methodParameters.size) {
+                    return cls.getFQN()
+                }
+            }
+        }
         return ""
     }
 
@@ -187,14 +197,17 @@ class ClassBinder(private val classDTO: ClassDTO) {
     }
 
     private fun searchImports(type: String): String {
-        logger.trace("Search type ($type) in imports")
+        if (ClassTypesUtils.isBasicType(type)) {
+            return type
+        }
 
+        logger.trace("Search type ($type) in imports")
         if (type == "") return ""
         for (import in importsList) {
             if (import.endsWith(type)) {
                 return import
             }
         }
-        return type
+        return "${classDTO.classPackage}.$type"
     }
 }

@@ -23,6 +23,7 @@ class AttributeDTO {
     var methodCallDTO: MethodCallDTO? = null
     var attributeModifiers: MutableList<Modifier> = mutableListOf()
 
+    @Transient
     private var classDTO : ClassDTO? = null
 
     @Transient
