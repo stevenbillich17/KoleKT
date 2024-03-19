@@ -6,6 +6,10 @@ import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
 
 class ParsingContext {
+    var insideParameter: Boolean = false
+    var insideSecondaryConstructor: Boolean = false
+    var insideType: Boolean = false
+    var insideClassParameter: Boolean = false
     var shouldStop: Boolean = false
     var insideFunctionBody: Boolean = false
     var insidePropertyDeclaration: Boolean = false
@@ -56,8 +60,10 @@ class ParsingContext {
 
     var classDTO: ClassDTO? = null
     val classesDTOs: MutableList<ClassDTO> = mutableListOf()
-    var mutableListOfClassParameters = mutableListOf<AttributeDTO>()
+    var parametersForConstructor = mutableListOf<AttributeDTO>()
     var mutableListOfAnnotations = mutableListOf<AnnotationDTO>()
     var superClass: String = ""
     var implementedInterfaces = mutableListOf<String>()
+    var lastSimpleIdentifier: String = ""
+
 }

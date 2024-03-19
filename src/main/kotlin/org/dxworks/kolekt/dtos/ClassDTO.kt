@@ -16,6 +16,7 @@ class ClassDTO(internal val className: String? = null) {
     internal var classType: ClassTypes = ClassTypes.CLASS
 
     internal val classMethods: MutableList<MethodDTO> = mutableListOf()
+    private  val classConstructors: MutableList<MethodDTO> = mutableListOf()
     internal val classFields: MutableList<AttributeDTO> = mutableListOf()
     internal val classAnnotations: MutableList<AnnotationDTO> = mutableListOf()
     internal val classModifiers: MutableList<Modifier> = mutableListOf()
@@ -41,6 +42,7 @@ class ClassDTO(internal val className: String? = null) {
                 " classInterfaces=(${buildClassInterfacesString()}),\n" +
                 " classModifiers=(${buildClassModifiersString()}),\n" +
                 " classAnnotations=$classAnnotations, \n" +
+                " classConstructors=$classConstructors, \n" +
                 " classMethods=$classMethods, \n" +
                 " classFields=${buildClassFieldsString()}\n)}"
     }
@@ -119,6 +121,18 @@ class ClassDTO(internal val className: String? = null) {
         classSubClassesNames.add(classDTO.getFQN())
         mutableListOfSubClasses.add(classDTO)
         logger.debug("Added sub class: ${classDTO.getFQN()}")
+    }
+
+    fun addConstructor(constructor: MethodDTO) {
+        if (constructor.methodName != className)  {
+            logger.error("Constructor name ${constructor.methodName} does not match class name $className")
+            throw IllegalArgumentException("Constructor name ${constructor.methodName} does not match class name $className")
+        }
+        classConstructors.add(constructor)
+    }
+
+    fun getConstructors(): List<MethodDTO> {
+        return classConstructors
     }
 
 }

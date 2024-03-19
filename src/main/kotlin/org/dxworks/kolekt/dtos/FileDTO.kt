@@ -41,6 +41,9 @@ data class FileDTO(val filePath: String,val fileName: String) {
      * or the short name if it's not found
      */
     fun getImport(shortName: String): String {
+        if (shortName.endsWith("?")) {
+            return getImport(shortName.substring(0, shortName.length - 1))
+        }
         for (import in imports) {
             if (import.endsWith(shortName)) {
                 return import
