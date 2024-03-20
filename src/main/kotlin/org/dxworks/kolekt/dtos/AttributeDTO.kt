@@ -3,6 +3,7 @@ package org.dxworks.kolekt.dtos
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.dxworks.kolekt.enums.AttributeType
+import org.dxworks.kolekt.enums.CollectionType
 import org.dxworks.kolekt.enums.Modifier
 import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.LoggerFactory
@@ -22,6 +23,9 @@ class AttributeDTO {
     var isSetByMethodCall = false
     var methodCallDTO: MethodCallDTO? = null
     var attributeModifiers: MutableList<Modifier> = mutableListOf()
+    var isCollection : Boolean = false
+    var typeOfCollection: CollectionType? = null
+    var collectionType: List<String>? = null
 
     @Transient
     private var classDTO : ClassDTO? = null
@@ -35,7 +39,10 @@ class AttributeDTO {
     }
 
     override fun toString(): String {
-        var result = "AttributeDTO(name='$name', type='$type', attributeType='$attributeType'"
+        var result = "AttributeDTO(name='$name', type='$type', attributeType='$attributeType', isCollection='$isCollection'"
+        if (isCollection) {
+            result = "$result, collectionType='$collectionType'"
+        }
         if(isSetByMethodCall) {
            result = "$result, methodCallDTO=$methodCallDTO" 
         }
@@ -58,6 +65,21 @@ class AttributeDTO {
         } catch (e: IllegalArgumentException) {
             logger.error("Modifier $modifierString not found")
         }
+    }
+
+    fun addCollectionType(foundCollectionType: String) {
+        isCollection = true
+        if (typeOfCollection == null) {
+            typeOfCollection = CollectionType.fromStringType(type)
+        }
+        if (collectionType == null) {
+            collectionType = listOf()
+        }
+        collectionType = collectionType?.plus(foundCollectionType)
+    }
+
+    fun isCollectionType() : Boolean {
+        return isCollection
     }
 
     fun addAllModifiers(modifiers: List<String>) {

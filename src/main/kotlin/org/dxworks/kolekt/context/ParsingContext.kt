@@ -4,8 +4,11 @@ import org.dxworks.kolekt.dtos.AnnotationDTO
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
+import org.dxworks.kolekt.enums.CollectionType
 
 class ParsingContext {
+    var insideTypeProjection: Boolean = false
+    var insideTypeArguments: Boolean = false
     var insideParameter: Boolean = false
     var insideSecondaryConstructor: Boolean = false
     var insideType: Boolean = false
@@ -62,8 +65,9 @@ class ParsingContext {
     val classesDTOs: MutableList<ClassDTO> = mutableListOf()
     var parametersForConstructor = mutableListOf<AttributeDTO>()
     var mutableListOfAnnotations = mutableListOf<AnnotationDTO>()
+    var typesForCollection = mutableListOf<String>()
     var superClass: String = ""
     var implementedInterfaces = mutableListOf<String>()
     var lastSimpleIdentifier: String = ""
-
+    var collectionType: CollectionType? = null
 }
