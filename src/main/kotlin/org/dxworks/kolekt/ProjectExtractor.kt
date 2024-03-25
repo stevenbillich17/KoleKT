@@ -14,13 +14,17 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParser.KotlinFileContext
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.ByteArrayInputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import java.io.IOException
 import java.lang.Exception
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import kotlin.io.path.pathString
 
-class ProjectExtractor(private val pathToProject: String) {
+class ProjectExtractor(private val pathToProject: String, private val pathToGenerated: String? = null) {
     val kotlinExtension = ".kt"
     var pathToFiles: MutableList<String> = mutableListOf()
     var filesDTOs: MutableList<FileDTO> = mutableListOf()
@@ -41,18 +45,33 @@ class ProjectExtractor(private val pathToProject: String) {
 
     fun printInteractiveInferface() {
         var option = 0
-        while (option != 4) {
+        while (option !=5) {
             showMenu()
             option = readLine()?.toInt() ?: 0
             when (option) {
                 1 -> enterClassesDtos()
                 2 -> bindClasses()
                 3 -> exportClasses()
-                4 -> println("Exiting")
+                4 -> exportAllClasses()
+                5 -> println("Exiting")
                 else -> println("Invalid option")
             }
         }
     }
+
+    private fun exportAllClasses() {
+        if (pathToGenerated == null) {
+            println("Path to generated not set")
+            return
+        }
+        // store all the classes from all the files
+        filesDTOs.forEach { fileDTO ->
+            fileDTO.classes.forEach { classDTO ->
+                File( "${pathToGenerated}\\${classDTO.getFQN()}.json").writeText(KoleSerializer.serialize(classDTO))
+            }
+        }
+    }
+
 
     private fun exportClasses() {
         val cls = chooseClass()
@@ -64,7 +83,8 @@ class ProjectExtractor(private val pathToProject: String) {
         println("1. Print classes Dtos")
         println("2. Bind classes Dtos")
         println("3. Serialize classes Dtos")
-        println("4. Exit")
+        println("4. Serialize all classes Dtos")
+        println("5. Exit")
     }
 
     fun enterClassesDtos() {
@@ -108,10 +128,10 @@ class ProjectExtractor(private val pathToProject: String) {
     }
 
     private fun printDetailsFromFiles() {
-        println("\n\n----------FROM HERE ON, WE PRINT THE FILES DETAILS----------\n\n")
-        filesDTOs.forEach { fileDTO ->
-            println(fileDTO)
-        }
+//        println("\n\n----------FROM HERE ON, WE PRINT THE FILES DETAILS----------\n\n")
+//        filesDTOs.forEach { fileDTO ->
+//            println(fileDTO)
+//        }
     }
 
     private fun printProgressBar(progress: Int, total: Int) {

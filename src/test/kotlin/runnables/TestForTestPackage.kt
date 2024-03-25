@@ -53,32 +53,32 @@ class TestForTestPackage {
     private fun testDifferentTypeOfClasses() {
         // data class
         val dataClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.DataClazz", false)
-        val classTypeData = dataClazz.classType
+        val classTypeData = dataClazz.typeOfClass
         assertEquals(ClassTypes.DATA, classTypeData)
 
         // object class
         val objectClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.ObjectClazz", false)
-        val classType = objectClazz.classType
+        val classType = objectClazz.typeOfClass
         assertEquals(ClassTypes.OBJECT, classType)
 
         // enum class
         val enumClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.EnumClazz", false)
-        val classTypeEnum = enumClazz.classType
+        val classTypeEnum = enumClazz.typeOfClass
         assertEquals(ClassTypes.ENUM, classTypeEnum)
 
         // annotation class
         val annotationClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.AnnotationClazz", false)
-        val classTypeAnnotation = annotationClazz.classType
+        val classTypeAnnotation = annotationClazz.typeOfClass
         assertEquals(ClassTypes.ANNOTATION, classTypeAnnotation)
 
         // interface class
         val interfaceClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.InterfaceClazz", false)
-        val classTypeInterface = interfaceClazz.classType
+        val classTypeInterface = interfaceClazz.typeOfClass
         assertEquals(ClassTypes.INTERFACE, classTypeInterface)
 
         // basic class
         val basicClazz = DictionariesController.findClassAfterFQN("org.dxworks.kolekt.testpackage.classes.BasicClazz", false)
-        val classTypeBasic = basicClazz.classType
+        val classTypeBasic = basicClazz.typeOfClass
         assertEquals(ClassTypes.CLASS, classTypeBasic)
     }
 

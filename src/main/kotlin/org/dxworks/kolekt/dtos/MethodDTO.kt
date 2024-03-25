@@ -16,6 +16,7 @@ data class MethodDTO(val methodName: String) {
     val methodModifiers = mutableListOf<Modifier>()
 
     private var methodReturnType: String = "Void"
+    @Transient
     private var methodReturnTypeClassDTO : ClassDTO? = null
 
     @Transient

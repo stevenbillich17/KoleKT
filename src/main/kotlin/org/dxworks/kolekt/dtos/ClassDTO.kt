@@ -12,8 +12,8 @@ import java.util.*
 class ClassDTO(internal val className: String? = null) {
     internal var classPackage: String? = null
     internal var superClass: String = ""
-    internal var classSubClassesNames: MutableList<String> = mutableListOf()
-    internal var classType: ClassTypes = ClassTypes.CLASS
+    internal var subClasses: MutableList<String> = mutableListOf()
+    internal var typeOfClass: ClassTypes = ClassTypes.CLASS
 
     internal val classMethods: MutableList<MethodDTO> = mutableListOf()
     private  val classConstructors: MutableList<MethodDTO> = mutableListOf()
@@ -22,6 +22,7 @@ class ClassDTO(internal val className: String? = null) {
     internal val classModifiers: MutableList<Modifier> = mutableListOf()
     internal val classInterfaces: MutableList<String> = mutableListOf()
 
+    @Transient
     internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
 
     @Transient
@@ -38,7 +39,7 @@ class ClassDTO(internal val className: String? = null) {
                 " classPackage='$classPackage',\n" +
                 " superClass='$superClass',\n" +
                 " classSubClassesNames=${buildSubClassesString()},\n" +
-                " classType=$classType,\n" +
+                " classType=$typeOfClass,\n" +
                 " classInterfaces=(${buildClassInterfacesString()}),\n" +
                 " classModifiers=(${buildClassModifiersString()}),\n" +
                 " classAnnotations=$classAnnotations, \n" +
@@ -55,7 +56,7 @@ class ClassDTO(internal val className: String? = null) {
 
     private fun buildSubClassesString(): String {
         var result = "\n    "
-        classSubClassesNames.forEach { result += "$it\n    " }
+        subClasses.forEach { result += "$it\n    " }
         return result
     }
 
@@ -81,12 +82,12 @@ class ClassDTO(internal val className: String? = null) {
 
     fun addModifier(modifierString: String) {
         if (className == "AnnotationClazz") {
-            println("Adding modifier: $modifierString")
+            logger.debug("Adding modifier: $modifierString")
         }
         try {
             val classType = ClassTypesUtils.getClassType(modifierString)
             if (classType != ClassTypes.CLASS)  {
-                this.classType = ClassTypesUtils.getClassType(modifierString)
+                this.typeOfClass = ClassTypesUtils.getClassType(modifierString)
             }
             val modifier = Modifier.valueOf(modifierString.uppercase(Locale.getDefault()))
             classModifiers.add(modifier)
@@ -110,15 +111,15 @@ class ClassDTO(internal val className: String? = null) {
     }
 
     fun setToObjectType() {
-        classType = ClassTypes.OBJECT
+        typeOfClass = ClassTypes.OBJECT
     }
 
     fun setToInterfaceType() {
-        classType = ClassTypes.INTERFACE
+        typeOfClass = ClassTypes.INTERFACE
     }
 
     fun addSubClass(classDTO: ClassDTO) {
-        classSubClassesNames.add(classDTO.getFQN())
+        subClasses.add(classDTO.getFQN())
         mutableListOfSubClasses.add(classDTO)
         logger.debug("Added sub class: ${classDTO.getFQN()}")
     }
