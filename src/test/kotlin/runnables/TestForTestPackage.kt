@@ -325,7 +325,7 @@ class TestForTestPackage {
         println(x.classInterfaces)
         assertTrue(x.classInterfaces.any { it == "org.dxworks.kolekt.testpackage.detector.DetectionSender" })
         assertTrue(x.classInterfaces.any { it == "org.dxworks.kolekt.testpackage.detector.DetectionScanner" })
-        assertTrue(x.classInterfaces.any { it == "org.dxworks.kolekt.testpackage.detector.ModernDestroyer" }) // todo: wrong interface
+        assertTrue(x.classInterfaces.any { it == "org.dxworks.kolekt.testpackage.destroyer.AppDestroyer" })
 
         // test supper class
         assertEquals("org.dxworks.kolekt.testpackage.detector.BaseDetector", x.superClass)

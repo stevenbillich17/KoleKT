@@ -157,6 +157,10 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
                 val fileDTO = listener.getFileDTO()
                 fileDTO.addClasses(listener.getClassesDTOs())
+                fileDTO.classes.forEach() {
+                    it.setImports(fileDTO.imports)
+                    it.setImportAliases(fileDTO.importAliases)
+                }
                 filesDTOs.add(fileDTO)
 
             } catch (e : Exception) {

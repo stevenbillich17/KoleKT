@@ -21,6 +21,8 @@ class ClassDTO(internal val className: String? = null) {
     internal val classAnnotations: MutableList<AnnotationDTO> = mutableListOf()
     internal val classModifiers: MutableList<Modifier> = mutableListOf()
     internal val classInterfaces: MutableList<String> = mutableListOf()
+    private val classImports: MutableList<String> = mutableListOf()
+    private val classImportsAliases: MutableMap<String, String> = mutableMapOf()
 
     @Transient
     internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
@@ -38,6 +40,8 @@ class ClassDTO(internal val className: String? = null) {
                 " className='$className',\n" +
                 " classPackage='$classPackage',\n" +
                 " superClass='$superClass',\n" +
+                " imports=${buildImportsString()},\n" +
+                " importsAliases=${buildImportsAliasesString()},\n" +
                 " classSubClassesNames=${buildSubClassesString()},\n" +
                 " classType=$typeOfClass,\n" +
                 " classInterfaces=(${buildClassInterfacesString()}),\n" +
@@ -46,6 +50,18 @@ class ClassDTO(internal val className: String? = null) {
                 " classConstructors=$classConstructors, \n" +
                 " classMethods=$classMethods, \n" +
                 " classFields=${buildClassFieldsString()}\n)}"
+    }
+
+    private fun buildImportsAliasesString(): String {
+        var result = "\n    "
+        classImportsAliases.forEach { result += "${it.key} -> ${it.value}\n    " }
+        return result
+    }
+
+    private fun buildImportsString(): String {
+        var result = "\n    "
+        classImports.forEach { result += "$it\n    " }
+        return result
     }
 
     private fun buildClassInterfacesString(): String {
@@ -134,6 +150,18 @@ class ClassDTO(internal val className: String? = null) {
 
     fun getConstructors(): List<MethodDTO> {
         return classConstructors
+    }
+
+    fun setImports(imports: List<String>) {
+        classImports.addAll(imports)
+    }
+
+    fun setImportAliases(aliases: Map<String, String>) {
+        classImportsAliases.putAll(aliases)
+    }
+
+    fun getImports(): List<String> {
+        return classImports
     }
 
 }
