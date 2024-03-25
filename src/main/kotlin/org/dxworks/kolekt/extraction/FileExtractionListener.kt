@@ -1,14 +1,15 @@
 package org.dxworks.kolekt.extraction
 
+import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.dxworks.kolekt.context.ParsingContext
 import org.dxworks.kolekt.details.DictionariesController
-import org.dxworks.kolekt.details.FQNClassesDictionary
 import org.dxworks.kolekt.dtos.*
 import org.dxworks.kolekt.enums.AttributeType
 import org.dxworks.kolekt.listeners.FieldListener
 import org.dxworks.kolekt.listeners.FunctionListener
+import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 import org.slf4j.LoggerFactory
@@ -30,12 +31,65 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     override fun exitPrimaryConstructor(ctx: KotlinParser.PrimaryConstructorContext?) {
+        if (ctx == null) return
+        createAndAddConstructor()
         parsingContext.insidePrimaryConstructor = false
     }
 
+    override fun enterSecondaryConstructor(ctx: KotlinParser.SecondaryConstructorContext?) {
+        if (ctx == null) return
+        parsingContext.insideSecondaryConstructor = true
+    }
+
+    override fun exitSecondaryConstructor(ctx: KotlinParser.SecondaryConstructorContext?) {
+        if (ctx == null) return
+        createAndAddConstructor()
+        parsingContext.insideSecondaryConstructor = false
+    }
+
+    override fun enterClassParameter(ctx: KotlinParser.ClassParameterContext?) {
+        if (ctx == null) return
+        parsingContext.insideClassParameter = true
+        logger.debug("Class parameter: ${ctx.text}")
+    }
+
+    override fun exitClassParameter(ctx: KotlinParser.ClassParameterContext?) {
+        if (ctx == null) return
+        addParameterForConstructor(ctx)
+        parsingContext.insideClassParameter = false
+    }
+
+    override fun enterType(ctx: KotlinParser.TypeContext?) {
+        if (ctx == null) return
+        parsingContext.insideType = true
+    }
+
+    override fun exitType(ctx: KotlinParser.TypeContext?) {
+        if (ctx == null) return
+        parsingContext.insideType = false
+    }
+
+
+
     override fun enterFunctionValueParameters(ctx: KotlinParser.FunctionValueParametersContext?) {
         if (ctx == null) return
-        logger.debug("Function value parameters: ${ctx.text}")
+        parsingContext.insideFunctionParameters = true
+    }
+
+    override fun exitFunctionValueParameters(ctx: KotlinParser.FunctionValueParametersContext?) {
+        if (ctx == null) return
+        parsingContext.insideFunctionParameters = false
+    }
+
+    override fun enterParameter(ctx: KotlinParser.ParameterContext?) {
+        if (ctx == null) return
+        addParameterForConstructor(ctx)
+        parsingContext.insideParameter = true
+    }
+
+    override fun exitParameter(ctx: KotlinParser.ParameterContext?) {
+        if (ctx == null) return
+        parsingContext.insideParameter = false
     }
 
     override fun enterImportHeader(ctx: KotlinParser.ImportHeaderContext?) {
@@ -128,6 +182,9 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     }
 
     private fun resolveImport(shortName: String): String {
+        if (ClassTypesUtils.isBasicType(shortName)) {
+            return shortName
+        }
         if (shortName == "") {
             return shortName
         }
@@ -160,6 +217,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
 
     override fun enterSimpleIdentifier(ctx: KotlinParser.SimpleIdentifierContext?) {
         if (ctx == null) return
+        parsingContext.insideSimpleIdentifier = true
+        parsingContext.lastSimpleIdentifier = ctx.text
         if (checkForSuperClass()) {
             logger.trace("Super class: ${ctx.text}")
             parsingContext.superClass = ctx.text
@@ -167,6 +226,11 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             logger.trace("Interface: ${ctx.text}")
             parsingContext.implementedInterfaces.add(ctx.text)
         }
+    }
+
+    override fun exitSimpleIdentifier(ctx: KotlinParser.SimpleIdentifierContext?) {
+        if (ctx == null) return
+        parsingContext.insideSimpleIdentifier = false
     }
 
     override fun enterSimpleUserType(ctx: KotlinParser.SimpleUserTypeContext?) {
@@ -310,6 +374,10 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         }
     }
 
+    private fun checkIfInsideConstructor(): Boolean {
+        return  parsingContext.insidePrimaryConstructor || parsingContext.insideSecondaryConstructor
+    }
+
     private fun checkIfInterfaceDeclaration(): Boolean {
         return parsingContext.insideClassDeclaration
                 && !parsingContext.insideClassBody
@@ -359,6 +427,28 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
     override fun exitDeclaration(ctx: KotlinParser.DeclarationContext?) {
         if (ctx == null) return
         parsingContext.insideDeclaration = false
+    }
+
+
+    private fun addParameterForConstructor(ctx: ParserRuleContext) {
+        if (checkIfInsideConstructor()) {
+            val variableName = ctx.getChild(KotlinParser.SimpleIdentifierContext::class.java, 0).text.trim()
+            val variableType = ctx.getChild(KotlinParser.TypeContext::class.java, 0).text.trim()
+            val resolvedVariableType = resolveImport(variableType)
+            val parameter = AttributeDTO(variableName, resolvedVariableType, AttributeType.PARAMETER)
+            parsingContext.parametersForConstructor.add(parameter)
+            logger.debug("Found constructor parameter: $variableName with type $variableType")
+        }
+    }
+
+    private fun createAndAddConstructor() {
+        val methodDTO = parsingContext.classDTO!!.className?.let { MethodDTO(it) }
+        methodDTO?.let {
+            methodDTO.methodParameters.addAll(parsingContext.parametersForConstructor)
+            parsingContext.parametersForConstructor.clear()
+            methodDTO.setMethodReturnType(parsingContext.classDTO!!.getFQN())
+            parsingContext.classDTO!!.addConstructor(methodDTO)
+        }
     }
 
     private fun parsePropertyDeclaration(propertyDeclaration: KotlinParser.PropertyDeclarationContext): AttributeDTO? {

@@ -13,6 +13,10 @@ class FQNClassesDictionary {
         return dict[classFQN]
     }
 
+    fun findClassesInsidePackage(packageName: String): List<ClassDTO> {
+        return dict.filter { it.key.startsWith(packageName) }.values.toList()
+    }
+
    fun getDict(): MutableMap<String, ClassDTO> {
        return dict
    }

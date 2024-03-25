@@ -4,6 +4,7 @@ import org.dxworks.kolekt.context.ParsingContext
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.enums.AttributeType
+import org.dxworks.kolekt.enums.CollectionType
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
 import org.slf4j.LoggerFactory
@@ -43,10 +44,20 @@ class FieldListener : KotlinParserBaseListener() {
         if (ctx == null) return
         parsingContext.insidePropertyDeclaration = false
 
-        attributeDTO = AttributeDTO(fieldName, fieldType, AttributeType.FIELD)
-        attributeDTO!!.addAllModifiers(modifiers)
-        methodCallDTO?.let {
-            attributeDTO!!.setByMethodCall(it)
+        if (parsingContext.collectionType != null) {
+            logger.debug("Types for collection: {}", parsingContext.typesForCollection)
+            attributeDTO = AttributeDTO(fieldName, parsingContext.collectionType!!.toString(), AttributeType.FIELD)
+            parsingContext.typesForCollection.forEach {
+                attributeDTO!!.addCollectionType(it)
+            }
+            parsingContext.typesForCollection.clear()
+            parsingContext.collectionType = null
+        } else {
+            attributeDTO = AttributeDTO(fieldName, fieldType, AttributeType.FIELD)
+            attributeDTO!!.addAllModifiers(modifiers)
+            methodCallDTO?.let {
+                attributeDTO!!.setByMethodCall(it)
+            }
         }
         logger.debug("AttributeDTO: {}", attributeDTO)
     }
@@ -192,6 +203,58 @@ class FieldListener : KotlinParserBaseListener() {
         }
     }
 
+    override fun enterTypeArguments(ctx: KotlinParser.TypeArgumentsContext?) {
+        if (ctx == null) return
+        parsingContext.insideTypeArguments = true
+    }
+
+    override fun exitTypeArguments(ctx: KotlinParser.TypeArgumentsContext?) {
+        if (ctx == null) return
+        parsingContext.insideTypeArguments = false
+    }
+
+    override fun enterTypeProjection(ctx: KotlinParser.TypeProjectionContext?) {
+        if (ctx == null) return
+        parsingContext.insideTypeProjection = true
+    }
+
+    override fun exitTypeProjection(ctx: KotlinParser.TypeProjectionContext?) {
+        if (ctx == null) return
+        parsingContext.insideTypeProjection = false
+    }
+
+    override fun enterType(ctx: KotlinParser.TypeContext?) {
+        if (ctx == null) return
+        if (isTypeForCollection()) {
+            if (ctx.text != null) {
+                parsingContext.typesForCollection.add(ctx.text)
+            }
+        }
+        parsingContext.insideType = true
+    }
+
+
+
+    override fun exitType(ctx: KotlinParser.TypeContext?) {
+        if (ctx == null) return
+        parsingContext.insideType = false
+    }
+
+
+    override fun enterSimpleUserType(ctx: KotlinParser.SimpleUserTypeContext?) {
+        if (ctx == null) return
+        if (parsingContext.containsColon && parsingContext.insideVariableDeclaration) {
+            val containsTypeArguments = ctx.getChild(KotlinParser.TypeArgumentsContext::class.java, 0) != null
+            if (containsTypeArguments) {
+                val collectionType = ctx.getChild(KotlinParser.SimpleIdentifierContext::class.java, 0)?.text
+                CollectionType.fromString(collectionType)?.let {
+                    parsingContext.collectionType = it
+                    logger.debug("Found type of collection: {}", it)
+                }
+            }
+        }
+    }
+
     override fun enterLiteralConstant(ctx: KotlinParser.LiteralConstantContext?) {
         if (ctx == null) return
 
@@ -223,6 +286,10 @@ class FieldListener : KotlinParserBaseListener() {
         }
     }
 
+    private fun isTypeForCollection(): Boolean {
+        return parsingContext.insideTypeProjection && parsingContext.insideTypeArguments
+    }
+
     override fun enterValueArgument(ctx: KotlinParser.ValueArgumentContext?) {
         if (ctx == null) return
         parsingContext.insideValueArgument = true
@@ -236,5 +303,20 @@ class FieldListener : KotlinParserBaseListener() {
         if (ctx == null) return
         parsingContext.insideValueArgument = false
     }
+
+    /*
+    CODE TO DETECT COLLECTION TYPES
+    val typeContext = ctx.variableDeclaration().type()
+        if (typeContext is KotlinParser.TypeContext) {
+            val variableName = ctx.variableDeclaration()?.simpleIdentifier()?.text
+            val userType = typeContext.text
+            val collectionType = userType.substringBefore('<')
+            val genericArguments = userType.substringAfter('<').substringBeforeLast('>').split(",").map { it.trim() }
+
+            if (variableName != null && collectionType.isNotEmpty() && genericArguments.isNotEmpty()) {
+                logger.debug("NE IA AI LOCUL Variable Name: $variableName, Collection Type: $collectionType, Element Types: $genericArguments")
+            }
+        }
+     */
 
 }

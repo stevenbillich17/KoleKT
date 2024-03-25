@@ -32,6 +32,11 @@ data class FileDTO(val filePath: String,val fileName: String) {
         logger.trace("Added import alias $alias for $import")
     }
 
+    fun addImportAliases(aliases: Map<String, String>) {
+        importAliases.putAll(aliases)
+        logger.trace("Added import aliases {}", aliases)
+    }
+
     fun getImportFromAlias(alias: String): String? {
         return importAliases[alias]
     }
@@ -41,6 +46,12 @@ data class FileDTO(val filePath: String,val fileName: String) {
      * or the short name if it's not found
      */
     fun getImport(shortName: String): String {
+        if (shortName.endsWith("?")) {
+            return getImport(shortName.substring(0, shortName.length - 1))
+        }
+        if (importAliases.containsKey(shortName)) {
+            return importAliases[shortName]!!
+        }
         for (import in imports) {
             if (import.endsWith(shortName)) {
                 return import

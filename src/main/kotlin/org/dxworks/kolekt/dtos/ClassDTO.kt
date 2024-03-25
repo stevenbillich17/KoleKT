@@ -12,15 +12,19 @@ import java.util.*
 class ClassDTO(internal val className: String? = null) {
     internal var classPackage: String? = null
     internal var superClass: String = ""
-    internal var classSubClassesNames: MutableList<String> = mutableListOf()
-    internal var classType: ClassTypes = ClassTypes.CLASS
+    internal var subClasses: MutableList<String> = mutableListOf()
+    internal var typeOfClass: ClassTypes = ClassTypes.CLASS
 
     internal val classMethods: MutableList<MethodDTO> = mutableListOf()
+    private  val classConstructors: MutableList<MethodDTO> = mutableListOf()
     internal val classFields: MutableList<AttributeDTO> = mutableListOf()
     internal val classAnnotations: MutableList<AnnotationDTO> = mutableListOf()
     internal val classModifiers: MutableList<Modifier> = mutableListOf()
     internal val classInterfaces: MutableList<String> = mutableListOf()
+    private val classImports: MutableList<String> = mutableListOf()
+    private val classImportsAliases: MutableMap<String, String> = mutableMapOf()
 
+    @Transient
     internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
 
     @Transient
@@ -36,13 +40,28 @@ class ClassDTO(internal val className: String? = null) {
                 " className='$className',\n" +
                 " classPackage='$classPackage',\n" +
                 " superClass='$superClass',\n" +
+                " imports=${buildImportsString()},\n" +
+                " importsAliases=${buildImportsAliasesString()},\n" +
                 " classSubClassesNames=${buildSubClassesString()},\n" +
-                " classType=$classType,\n" +
+                " classType=$typeOfClass,\n" +
                 " classInterfaces=(${buildClassInterfacesString()}),\n" +
                 " classModifiers=(${buildClassModifiersString()}),\n" +
                 " classAnnotations=$classAnnotations, \n" +
+                " classConstructors=$classConstructors, \n" +
                 " classMethods=$classMethods, \n" +
                 " classFields=${buildClassFieldsString()}\n)}"
+    }
+
+    private fun buildImportsAliasesString(): String {
+        var result = "\n    "
+        classImportsAliases.forEach { result += "${it.key} -> ${it.value}\n    " }
+        return result
+    }
+
+    private fun buildImportsString(): String {
+        var result = "\n    "
+        classImports.forEach { result += "$it\n    " }
+        return result
     }
 
     private fun buildClassInterfacesString(): String {
@@ -53,7 +72,7 @@ class ClassDTO(internal val className: String? = null) {
 
     private fun buildSubClassesString(): String {
         var result = "\n    "
-        classSubClassesNames.forEach { result += "$it\n    " }
+        subClasses.forEach { result += "$it\n    " }
         return result
     }
 
@@ -79,12 +98,12 @@ class ClassDTO(internal val className: String? = null) {
 
     fun addModifier(modifierString: String) {
         if (className == "AnnotationClazz") {
-            println("Adding modifier: $modifierString")
+            logger.debug("Adding modifier: $modifierString")
         }
         try {
             val classType = ClassTypesUtils.getClassType(modifierString)
             if (classType != ClassTypes.CLASS)  {
-                this.classType = ClassTypesUtils.getClassType(modifierString)
+                this.typeOfClass = ClassTypesUtils.getClassType(modifierString)
             }
             val modifier = Modifier.valueOf(modifierString.uppercase(Locale.getDefault()))
             classModifiers.add(modifier)
@@ -108,17 +127,41 @@ class ClassDTO(internal val className: String? = null) {
     }
 
     fun setToObjectType() {
-        classType = ClassTypes.OBJECT
+        typeOfClass = ClassTypes.OBJECT
     }
 
     fun setToInterfaceType() {
-        classType = ClassTypes.INTERFACE
+        typeOfClass = ClassTypes.INTERFACE
     }
 
     fun addSubClass(classDTO: ClassDTO) {
-        classSubClassesNames.add(classDTO.getFQN())
+        subClasses.add(classDTO.getFQN())
         mutableListOfSubClasses.add(classDTO)
         logger.debug("Added sub class: ${classDTO.getFQN()}")
+    }
+
+    fun addConstructor(constructor: MethodDTO) {
+        if (constructor.methodName != className)  {
+            logger.error("Constructor name ${constructor.methodName} does not match class name $className")
+            throw IllegalArgumentException("Constructor name ${constructor.methodName} does not match class name $className")
+        }
+        classConstructors.add(constructor)
+    }
+
+    fun getConstructors(): List<MethodDTO> {
+        return classConstructors
+    }
+
+    fun setImports(imports: List<String>) {
+        classImports.addAll(imports)
+    }
+
+    fun setImportAliases(aliases: Map<String, String>) {
+        classImportsAliases.putAll(aliases)
+    }
+
+    fun getImports(): List<String> {
+        return classImports
     }
 
 }
