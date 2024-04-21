@@ -4,7 +4,9 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.binders.ClassBinder
+import org.dxworks.kolekt.binders.FileBinder
 import org.dxworks.kolekt.details.DictionariesController
+import org.dxworks.kolekt.details.FileController
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.FileDTO
 import org.dxworks.kolekt.extraction.FileExtractionListener
@@ -51,9 +53,10 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
             when (option) {
                 1 -> enterClassesDtos()
                 2 -> bindClasses()
-                3 -> exportClasses()
-                4 -> exportAllClasses()
-                5 -> println("Exiting")
+                3 -> bindAllClasses()
+                4 -> exportClasses()
+                5 -> exportAllClasses()
+                6 -> println("Exiting")
                 else -> println("Invalid option")
             }
         }
@@ -82,9 +85,10 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         println("Menu:")
         println("1. Print classes Dtos")
         println("2. Bind classes Dtos")
-        println("3. Serialize classes Dtos")
-        println("4. Serialize all classes Dtos")
-        println("5. Exit")
+        println("3. Bind all classes Dtos")
+        println("4. Serialize classes Dtos")
+        println("5. Serialize all classes Dtos")
+        println("6. Exit")
     }
 
     fun enterClassesDtos() {
@@ -104,12 +108,16 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     fun bindAllClasses() {
-        filesDTOs.forEach { fileDTO ->
-            val imports = fileDTO.imports
-            fileDTO.classes.forEach { classDTO ->
-                val classBinder = ClassBinder(classDTO)
-                classBinder.bind(imports, false)
-            }
+//        filesDTOs.forEach { fileDTO ->
+//            val imports = fileDTO.imports
+//            fileDTO.classes.forEach { classDTO ->
+//                val classBinder = ClassBinder(classDTO)
+//                classBinder.bind(imports, false)
+//            }
+//        }
+        filesDTOs.forEach() {
+            val fileBinder = FileBinder(it)
+            fileBinder.bind()
         }
     }
 
@@ -162,6 +170,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
                     it.setImportAliases(fileDTO.importAliases)
                 }
                 filesDTOs.add(fileDTO)
+                FileController.addFileDTO(fileDTO)
 
             } catch (e : Exception) {
                 logger.error("Exception at parsing file: {$filePath}. With message: {$e} stack trace:")

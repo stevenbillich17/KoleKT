@@ -110,7 +110,6 @@ class ClassBinder(private val classDTO: ClassDTO) {
 
     private fun resolveMethodCallType(field: AttributeDTO): String {
         logger.trace("Resolving method call type for field {}, methodCallDTO: {}", field.name, field.methodCallDTO)
-
         val methodCallDTO = field.methodCallDTO
         val methodCallReference = methodCallDTO?.referenceName
 
@@ -155,10 +154,13 @@ class ClassBinder(private val classDTO: ClassDTO) {
     ): String {
         // first search in class methods
         var returnType: String? = null
+        if (methodCallDTO.methodName == "testReturn") {
+            logger.trace("Found weight field")
+        }
         for (method in classDTO.classMethods) {
             if (method.methodName == methodCallDTO.methodName && methodCallDTO.parameters.size == method.methodParameters.size) {
                 // todo: should match the types also
-                returnType = method.getMethodReturnType()
+                returnType = method.getMethodReturnType() // todo: problem see getWeight
             }
         }
         // todo: treat them better with classes
@@ -173,7 +175,7 @@ class ClassBinder(private val classDTO: ClassDTO) {
         // searching if the method name is a constructor for other classes
         val classDTOs = DictionariesController.findClassesInSamePackage(classDTO.classPackage)
         for (cls in classDTOs) {
-            for (method in cls.classMethods) {
+            for (method in cls.classMethods) { //todo: this are not constructors
                 if (method.methodName == methodCallDTO.methodName && methodCallDTO.parameters.size == method.methodParameters.size) {
                     return cls.getFQN()
                 }

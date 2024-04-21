@@ -140,6 +140,13 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             }
             parsingContext.implementedInterfaces.clear()
 
+            if (parsingContext.classDTO!!.getConstructors().size == 0) {
+                // no declared constructor, add default constructor
+                val defaultConstructor = MethodDTO(parsingContext.classDTO!!.className!!)
+                defaultConstructor.setMethodReturnType(parsingContext.classDTO!!.getFQN())
+                parsingContext.classDTO!!.addConstructor(defaultConstructor)
+            }
+
             parsingContext.classesDTOs.add(parsingContext.classDTO!!)
             DictionariesController.addClassDTO(parsingContext.classDTO!!)
             parsingContext.classDTO = null
