@@ -2,83 +2,130 @@ package org.dxworks.kolekt.binders
 
 import org.dxworks.kolekt.details.FileController
 import org.dxworks.kolekt.dtos.*
+import org.dxworks.kolekt.utils.ClassTypesUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class FileBinder(private val fileDTO: FileDTO) {
     val logger: Logger = LoggerFactory.getLogger("FileBinder@${fileDTO.fileName}")
-    val classesInFile = fileDTO.classes
-    val functionsInFile = fileDTO.functions
-    val importsInFile = fileDTO.imports
-    val cachedMethods = mutableMapOf<String, MethodDTO>()
 
 
     fun bind() {
-        logger.debug("Working on binding file...");
-        for (classDTO in classesInFile) {
+        for (classDTO in fileDTO.classes) {
             bindFieldsForClass(classDTO)
         }
     }
 
     private fun bindFieldsForClass(classDTO: ClassDTO) {
-        logger.debug("Binding fields for class ${classDTO.className}")
+        logger.debug("\nBinding fields for class ${classDTO.className}")
         for (field in classDTO.classFields) {
             if (!field.isCollectionType()) {
-                val visibleType = findSimpleAttributeType(field, classDTO)
-                logger.debug("Field ${field.name} has type $visibleType")
+                val type: String? = findAttributeType(field, classDTO, fileDTO)
+                if (type != null) {
+                    field.type = type
+                }
+                logger.debug("Field ${field.name} has type ${field.type}")
+            } else {
+                // todo: it is possible here that we already got the types (ex: List<Zuzu> => Zuzu)
+                val types: List<String> = findGenericAttributeType(field, classDTO, fileDTO)
+                if (types.isNotEmpty()) {
+                    field.collectionType = types
+                }
+                logger.debug("Field {} has types {}", field.name, types)
             }
-            // todo: add support for generics also
-            // todo: must resolve the type after finding
         }
     }
 
-    fun findSimpleAttributeType(attribute: AttributeDTO, classDTO: ClassDTO): String? {
+    fun findAttributeType(attribute: AttributeDTO, classDTO: ClassDTO, fileDTO: FileDTO): String? {
+        // finding the simple type
+        var type: String? = null
         if (attribute.isSetByMethodCall && isNullOrEmpty(attribute.type)) {
-            return findMethodCallReturnType(attribute.methodCallDTO!!, classDTO)
+            val methodDTO: MethodDTO? = findMethodCall(attribute.methodCallDTO!!, classDTO, fileDTO)
+            if (methodDTO != null) {
+                type = findMethodReturnType(methodDTO)
+            }
         } else {
-            return attribute.type
+            type = attribute.type
         }
+        // solving the fully qualified name
+        if (type != null) {
+            val typeFQN: String? = findFullyQualifiedNameForClass(type, classDTO.classPackage, fileDTO)
+            if (typeFQN != null) {
+                return typeFQN
+            }
+        }
+        return type
+    }
+
+    private fun findMethodReturnType(methodDTO: MethodDTO): String {
+        val methodReturnType = methodDTO.getMethodReturnType()
+        if (ClassTypesUtils.isBasicType(methodReturnType)) {
+            return methodReturnType
+        }
+
+        if (methodDTO.getParentFileDTO() == null) {
+            throw RuntimeException("Parent file not found for method ${methodDTO.methodName}")
+        }
+        if (methodDTO.getParenClassDTO() != null) {
+            val methodReturnTypeFQN = findFullyQualifiedNameForClass(
+                methodReturnType,
+                methodDTO.getParenClassDTO()!!.classPackage,
+                methodDTO.getParentFileDTO()!!
+            )
+            if (methodReturnTypeFQN != null) {
+                return methodReturnTypeFQN
+            }
+        }
+        // todo: add support for the moment when no parent class file is found (FILE SHOULD BE FOUND)
+        return methodReturnType
+    }
+
+    private fun findGenericAttributeType(attribute: AttributeDTO, classDTO: ClassDTO, fileDTO: FileDTO): List<String> {
+        val types: List<String>? = attribute.collectionType
+        if (!attribute.isCollectionType() || types == null) {
+            throw RuntimeException("Attribute ${attribute.name} is not a collection")
+        }
+        val typesFQN: MutableList<String> = mutableListOf()
+        for (type in types) {
+            val typeFQN: String? = findFullyQualifiedNameForClass(type, classDTO.classPackage, fileDTO)
+            if (typeFQN != null) {
+                typesFQN.add(typeFQN)
+            } else {
+                typesFQN.add(type)
+            }
+        }
+        return typesFQN
     }
 
     private fun isNullOrEmpty(type: String?): Boolean {
         return type.isNullOrEmpty() || type == "null"
     }
 
-    private fun findAttributeType(attribute: AttributeDTO, classDTO: ClassDTO): String {
-        val attributeType = attribute.type
-        return "";
-    }
-
-    private fun findGenericAttributeType(attribute: AttributeDTO, classDTO: ClassDTO): List<String> {
-        if (!attribute.isCollectionType()) {
-            throw RuntimeException("Attribute ${attribute.name} is not a collection")
-        }
-        // todo: add support for generics
-        val resolvedTypes: MutableList<String> = mutableListOf()
-        return resolvedTypes
-    }
-
-    private fun findMethodCallReturnType(methodCallDTO: MethodCallDTO, classDTO: ClassDTO): String? {
+    private fun findMethodCall(methodCallDTO: MethodCallDTO, classDTO: ClassDTO, fileDTO: FileDTO): MethodDTO? {
         // first search if there is a reference for that method call
         val methodCallName = methodCallDTO.methodName
         val referenceName = methodCallDTO.referenceName
         var methodDTO: MethodDTO? = null
-        if (referenceName == "mwWriter") {
-            logger.debug("mwWriter reference found")
-        }
         if (referenceName == null) {
-            methodDTO = findMethodInsideClassOrImports(methodCallName, classDTO)
+            methodDTO = findMethodInsideClassOrImports(methodCallName, classDTO, fileDTO)
             if (methodDTO == null) {
-                methodDTO = findConstructorInsideImportsOrSamePackage(methodCallName, classDTO.classPackage)
+                methodDTO = findConstructorInsideImportsOrSamePackage(methodCallName, classDTO.classPackage, fileDTO)
             }
         } else {
-            methodDTO = findMethodAfterNameAndReference(methodCallName, referenceName, classDTO)
+            methodDTO = findMethodAfterNameAndReference(methodCallName, referenceName, classDTO, fileDTO)
         }
-        return methodDTO?.getMethodReturnType()
+        if (methodCallDTO.methodName == "makeCoolStuff") {
+            logger.debug("Jere")
+        }
+        return methodDTO
     }
 
-    private fun findConstructorInsideImportsOrSamePackage(constructorName: String, classPackage: String?): MethodDTO? {
-        for (import in importsInFile) {
+    private fun findConstructorInsideImportsOrSamePackage(
+        constructorName: String,
+        classPackage: String?,
+        fileDTO: FileDTO
+    ): MethodDTO? {
+        for (import in fileDTO.imports) {
             if (import.endsWith(constructorName)) {
                 // search the files into the package of the import for the constructor
                 val packageName = getPackageNameFromImport(import)
@@ -135,7 +182,8 @@ class FileBinder(private val fileDTO: FileDTO) {
     private fun findMethodAfterNameAndReference(
         methodCallName: String,
         referenceName: String,
-        classDTO: ClassDTO
+        classDTO: ClassDTO,
+        fileDTO: FileDTO
     ): MethodDTO? {
         // the reference name can be a field from the class
         val attributeDTO = searchFieldWithName(referenceName, classDTO)
@@ -143,11 +191,12 @@ class FileBinder(private val fileDTO: FileDTO) {
             // find attribute class and search for the method
             val attributeClass = attributeDTO.type
             // build fully qualified name for the attribute class
-            val fullyQualifiedNameOrClassName = findFullyQualifiedNameForClass(attributeClass, classDTO.classPackage) ?: attributeClass
+            val fullyQualifiedNameOrClassName =
+                findFullyQualifiedNameForClass(attributeClass, classDTO.classPackage, fileDTO) ?: attributeClass
             val attributeClassDTO =
-                FileController.findClassInFiles(fullyQualifiedNameOrClassName) //todo: maybe it should be fully qualified name here
+                FileController.findClassInFiles(fullyQualifiedNameOrClassName) //todo: maybe it should be fully qualified name here (done)
             if (attributeClassDTO != null) {
-                return findMethodInsideClassOrImports(methodCallName, attributeClassDTO)
+                return findMethodInsideClassOrImports(methodCallName, attributeClassDTO, fileDTO)
             }
         }
         return null
@@ -161,19 +210,23 @@ class FileBinder(private val fileDTO: FileDTO) {
      * - simpleTypeName = "Zuzu"
      * - returns "org.dxworks.kolekt.testpackage.Zuzu"
      */
-    private fun findFullyQualifiedNameForClass(simpleClassName: String, classPackage: String?): String? {
+    private fun findFullyQualifiedNameForClass(
+        targetClassName: String,
+        currentClassPackage: String?,
+        currentFileDTO: FileDTO
+    ): String? {
         // check if the class name is already fully qualified
-        if (simpleClassName.contains('.')) {
-            return simpleClassName
+        if (targetClassName.contains('.')) {
+            return targetClassName
         }
         // search for the class name in the imports
-        var typeClass: ClassDTO? = searchClassInImports(simpleClassName)
+        var typeClass: ClassDTO? = searchClassInImports(targetClassName, currentFileDTO)
         if (typeClass != null) {
             return typeClass.getFQN()
         }
         // search for the class name in the same package
-        if (classPackage != null) {
-            typeClass = findClassInPackage(simpleClassName, classPackage)
+        if (currentClassPackage != null) {
+            typeClass = findClassInPackage(targetClassName, currentClassPackage)
             if (typeClass != null) {
                 return typeClass.getFQN()
             }
@@ -190,7 +243,11 @@ class FileBinder(private val fileDTO: FileDTO) {
         return null
     }
 
-    private fun findMethodInsideClassOrImports(methodCallName: String, classDTO: ClassDTO): MethodDTO? {
+    private fun findMethodInsideClassOrImports(
+        methodCallName: String,
+        classDTO: ClassDTO,
+        fileDTO: FileDTO
+    ): MethodDTO? {
         // 1. the method can be inside the class
         val methodDTOs: MutableList<MethodDTO> = searchMethodsWithName(methodCallName, classDTO)
         if (methodDTOs.size != 0) {
@@ -198,21 +255,21 @@ class FileBinder(private val fileDTO: FileDTO) {
             return methodDTOs[0]
         }
         // 2. the method can be imported
-        val importedMethod: MethodDTO? = searchMethodInImports(methodCallName)
+        val importedMethod: MethodDTO? = searchMethodInImports(methodCallName, fileDTO)
         if (importedMethod != null) {
             return importedMethod
         }
         return null
     }
 
-    private fun searchClassInImports(className: String): ClassDTO? {
+    private fun searchClassInImports(className: String, fileDTO: FileDTO): ClassDTO? {
         // search the aliases
         val importNotAliased: String? = fileDTO.importAliases[className]
         if (importNotAliased != null) {
             return findClassInPackageUsingCleanImport(importNotAliased)
         }
         // search the imports
-        for (import in importsInFile) {
+        for (import in fileDTO.imports) {
             if (import.endsWith(className)) {
                 // search the files into the package of the import for the class
                 val packageName = getPackageNameFromImport(import)
@@ -225,14 +282,14 @@ class FileBinder(private val fileDTO: FileDTO) {
         return null
     }
 
-    private fun searchMethodInImports(methodCallName: String): MethodDTO? {
+    private fun searchMethodInImports(methodCallName: String, fileDTO: FileDTO): MethodDTO? {
         // search the aliases
         val importNotAliased: String? = fileDTO.importAliases[methodCallName]
         if (importNotAliased != null) {
             return findMethodInPackageUsingCleanImport(importNotAliased)
         }
         // search the imports
-        for (import in importsInFile) {
+        for (import in fileDTO.imports) {
             if (import.endsWith(methodCallName)) {
                 val methodDTO = findMethodInPackageUsingCleanImport(import)
                 if (methodDTO != null) {
