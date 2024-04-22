@@ -1,6 +1,7 @@
 package org.dxworks.kolekt.listeners
 
 import org.dxworks.kolekt.context.ParsingContext
+import org.dxworks.kolekt.dtos.AttributeAccessDTO
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.enums.AttributeType
@@ -57,6 +58,13 @@ class FieldListener : KotlinParserBaseListener() {
             attributeDTO!!.addAllModifiers(modifiers)
             methodCallDTO?.let {
                 attributeDTO!!.setByMethodCall(it)
+            }
+            if (methodCallDTO == null && parsingContext.wasThereAnNavigationSuffix && parsingContext.referenceName != null) {
+                val attributeAccessDTO = AttributeAccessDTO(parsingContext.accessedFieldName, parsingContext.referenceName!!)
+                attributeDTO!!.setByAttributeAccess(attributeAccessDTO)
+                parsingContext.accessedFieldName = ""
+                parsingContext.referenceName = null
+                logger.trace("AttributeAccessDTO: {}", attributeAccessDTO)
             }
         }
         logger.debug("AttributeDTO: {}", attributeDTO)
@@ -146,6 +154,9 @@ class FieldListener : KotlinParserBaseListener() {
             calledMethodName = ctx.simpleIdentifier().text
             wasMethodNameSet = true
         }
+        if (parsingContext.insideInfixFunctionCall && parsingContext.insideAdditiveExpression && parsingContext.insidePostFixUnarySuffix && ctx.memberAccessOperator() != null) {
+            parsingContext.accessedFieldName = ctx.simpleIdentifier().text
+        }
     }
 
     override fun exitNavigationSuffix(ctx: KotlinParser.NavigationSuffixContext?) {
@@ -157,6 +168,7 @@ class FieldListener : KotlinParserBaseListener() {
     override fun enterCallSuffix(ctx: KotlinParser.CallSuffixContext?) {
         if (ctx == null) return
         parsingContext.insideCallSuffix = true
+        parsingContext.wasThereAnCallSuffix = true
     }
 
 

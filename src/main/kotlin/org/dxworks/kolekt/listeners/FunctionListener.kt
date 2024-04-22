@@ -170,6 +170,14 @@ class FunctionListener : KotlinParserBaseListener() {
         if (ctx == null || parsingContext.shouldStop) return
         parsingContext.insidePropertyDeclaration = false
         logger.trace("Exiting property declaration: ${ctx.text}")
+
+        // possible attribute access
+        var attributeAccessDTO: AttributeAccessDTO? = null
+        if (parsingContext.wasThereAnNavigationSuffix && !parsingContext.wasThereAnCallSuffix) {
+            attributeAccessDTO = AttributeAccessDTO(parsingContext.accessedFieldName, parsingContext.referenceName!!)
+            logger.debug("Adding attribute access: {}", attributeAccessDTO)
+        }
+
         if (ctx.variableDeclaration() != null) {
             val tempType = ctx.variableDeclaration().type()?.text ?: parsingContext.valueType
 
@@ -182,6 +190,8 @@ class FunctionListener : KotlinParserBaseListener() {
 
             if (tempType == "null" && parsingContext.wasThereAnCallSuffix && parsingContext.wasThereAnInfixFunctionCall) {
                 foundAttribute.setByMethodCall(parsingContext.lastCallSuffixMethodCall!!)
+            } else if (attributeAccessDTO != null) {
+                foundAttribute.setByAttributeAccess(attributeAccessDTO)
             }
 
             logger.debug("Adding local variable: {}", foundAttribute)
@@ -326,7 +336,8 @@ class FunctionListener : KotlinParserBaseListener() {
         parsingContext.wasThereAnNavigationSuffix = true
         if (parsingContext.insideInfixFunctionCall && parsingContext.insideAdditiveExpression && parsingContext.insidePostFixUnarySuffix && ctx.memberAccessOperator() != null) {
             parsingContext.calledMethodName = ctx.simpleIdentifier().text
-            logger.trace("Method name: ${parsingContext.calledMethodName}")
+            parsingContext.accessedFieldName = ctx.simpleIdentifier().text
+            logger.trace("Method name or accessed field: ${parsingContext.calledMethodName}")
         }
     }
 

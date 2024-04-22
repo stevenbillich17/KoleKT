@@ -12,6 +12,7 @@ class TestClass(var age: Int, var name: String) {
     var height: Double = 5.0
     val mwWriter: MalwareWriter = MalwareWriter()
     val counter = mwWriter.initializeInt()
+    val mwWriterStringAccessed = mwWriter.s
     val amazingMalware = mwWriter.makeCoolStuff()
     var weight = getWeightValue()
     var weight2  = aliasTestMalware()
@@ -41,6 +42,11 @@ class TestClass(var age: Int, var name: String) {
         val xTurbat = 5
         var y: String? = null
         val z = MalwareWriter()
+        val s = z.s
+        // todo: should make the calls and attributes a linked list
+        //val slen = z.s.length
+        //val scsFar = z.makeCoolStuff().hashCode()
+        val scs = z.makeCoolStuff()
         val cpyMwWriter = testReturn()
         z.writeMalware()
         z.writeMalwareWithParameters("ceva", "altceva")

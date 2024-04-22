@@ -52,6 +52,7 @@ class ParsingContext {
     var wasThereAnInfixFunctionCall: Boolean = false
     var wasThereAnNavigationSuffix: Boolean = false
 
+    var accessedFieldName: String = ""
     var valueName = ""
     var referenceName: String? = ""
     var valueType = ""

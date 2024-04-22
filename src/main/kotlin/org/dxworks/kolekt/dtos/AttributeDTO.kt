@@ -27,6 +27,8 @@ class AttributeDTO {
     var attributeType: AttributeType = AttributeType.FIELD
     var isSetByMethodCall = false
     var methodCallDTO: MethodCallDTO? = null
+    var isSetByAttributeAccess = false
+    var attributeAccessDTO: AttributeAccessDTO? = null
     var attributeModifiers: MutableList<Modifier> = mutableListOf()
     var isCollection : Boolean = false
     var typeOfCollection: CollectionType? = null
@@ -43,6 +45,11 @@ class AttributeDTO {
         isSetByMethodCall = true
     }
 
+    fun setByAttributeAccess(attributeAccessDTO: AttributeAccessDTO) {
+        this.attributeAccessDTO = attributeAccessDTO
+        isSetByAttributeAccess = true
+    }
+
     override fun toString(): String {
         var result = "AttributeDTO(name='$name', type='$type', attributeType='$attributeType', isCollection='$isCollection'"
         if (isCollection) {
@@ -50,6 +57,9 @@ class AttributeDTO {
         }
         if(isSetByMethodCall) {
            result = "$result, methodCallDTO=$methodCallDTO" 
+        }
+        if (isSetByAttributeAccess) {
+            result = "$result, attributeAccessDTO=$attributeAccessDTO"
         }
         result = "$result, attributeModifiers=(${buildAttributeModifiersString()})"
         result = "$result)"
