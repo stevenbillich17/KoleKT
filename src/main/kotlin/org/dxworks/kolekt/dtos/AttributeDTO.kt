@@ -14,11 +14,16 @@ class AttributeDTO {
     constructor (name: String,  type: String, attributeType: AttributeType) {
         this.name = name.trim()
         this.type = type.trim()
+        if (type.contains("?")) {
+            this.type = type.replace("?", "")
+            isNullable = true
+        }
         this.attributeType = attributeType
     }
 
     var name: String = ""
     var type: String = ""
+    var isNullable: Boolean = false
     var attributeType: AttributeType = AttributeType.FIELD
     var isSetByMethodCall = false
     var methodCallDTO: MethodCallDTO? = null
