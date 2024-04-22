@@ -29,7 +29,7 @@ data class MethodCallDTO(val methodName: String, val parameters: List<String>) {
 
     fun setClassThatIsCalled(classThatIsCalled: ClassDTO?) {
         if (classThatIsCalled != null) {
-            this.classThatIsCalled = classThatIsCalled.className
+            this.classThatIsCalled = classThatIsCalled.getFQN()
             this.classThatIsCalledDTO = classThatIsCalled
         }
     }

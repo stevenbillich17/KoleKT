@@ -465,6 +465,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             methodDTO.setMethodReturnType(parsingContext.classDTO!!.getFQN())
             methodDTO.setParentClassDTO(parsingContext.classDTO!!)
             methodDTO.setParentFileDTO(fileDTO)
+            methodDTO.setConstructor()
             parsingContext.classDTO!!.addConstructor(methodDTO)
         }
     }

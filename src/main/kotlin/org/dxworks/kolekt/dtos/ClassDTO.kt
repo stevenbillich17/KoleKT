@@ -145,6 +145,7 @@ class ClassDTO(internal val className: String? = null) {
             logger.error("Constructor name ${constructor.methodName} does not match class name $className")
             throw IllegalArgumentException("Constructor name ${constructor.methodName} does not match class name $className")
         }
+        constructor.setConstructor()
         classConstructors.add(constructor)
     }
 

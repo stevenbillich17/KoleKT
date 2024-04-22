@@ -14,6 +14,7 @@ data class MethodDTO(val methodName: String) {
     val methodLocalVariables = mutableListOf<AttributeDTO>()
     val methodAnnotations = mutableListOf<AnnotationDTO>()
     val methodModifiers = mutableListOf<Modifier>()
+    private var isConstructor = false
 
     private var methodReturnType: String = "Void"
 
@@ -36,6 +37,7 @@ data class MethodDTO(val methodName: String) {
         return "\n  {\n" +
                 "   MethodDTO(\n" +
                 "   methodName='$methodName',\n" +
+                "   isConstructor='$isConstructor',\n" +
                 "   methodReturnType='$methodReturnType',\n" +
                 "   methodModifiers=(${buildMethodModifiersString()}),\n" +
                 "   methodParameters=(${buildMethodParametersString()}), \n" +
@@ -69,6 +71,14 @@ data class MethodDTO(val methodName: String) {
 
     fun getMethodReturnType(): String {
         return methodReturnType
+    }
+
+    fun setConstructor() {
+        isConstructor = true
+    }
+
+    fun isConstructor(): Boolean {
+        return isConstructor
     }
 
     private fun buildMethodParametersString(): String {
