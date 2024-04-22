@@ -20,14 +20,18 @@ class FileBinder(private val fileDTO: FileDTO) {
 
     private fun bindFileFunctions(fileDTO: FileDTO) {
         for (function in fileDTO.functions) {
-            findAndSetMethodReturnType(function)
-            findAndSetMethodParametersTypes(function)
-            findAndSetMethodLocalVariablesTypes(function)
+            findAndSetTypesForMethod(function, null)
         }
     }
 
     private fun bindFieldsForClass(classDTO: ClassDTO) {
+        // bind the fields types
         findAndSetAttributesTypes(classDTO.classFields, null, classDTO, fileDTO)
+        // bind method calls for the fields
+        val attributesSetByMethodCallDTOs = classDTO.classFields.filter { it.isSetByMethodCall }
+        for (attributeDTO in attributesSetByMethodCallDTOs) {
+            findAndSetMethodCallInfo(attributeDTO.methodCallDTO!!, null, classDTO, fileDTO)
+        }
         logger.debug(
             "Class {} has fields types {}",
             classDTO.className,
@@ -37,11 +41,15 @@ class FileBinder(private val fileDTO: FileDTO) {
     private fun bindMethodsForClass(classDTO: ClassDTO) {
         logger.debug("Binding methods for class ${classDTO.className}")
         for (methodDTO in classDTO.classMethods) {
-            findAndSetMethodReturnType(methodDTO)
-            findAndSetMethodParametersTypes(methodDTO)
-            findAndSetMethodLocalVariablesTypes(methodDTO)
-            findAndSetMethodCallsFromMethod(methodDTO, classDTO, fileDTO)
+            findAndSetTypesForMethod(methodDTO, classDTO)
         }
+    }
+
+    private fun findAndSetTypesForMethod(methodDTO: MethodDTO, classDTO: ClassDTO?) {
+        findAndSetMethodReturnType(methodDTO)
+        findAndSetMethodParametersTypes(methodDTO)
+        findAndSetMethodLocalVariablesTypes(methodDTO)
+        findAndSetMethodCallsFromMethod(methodDTO, classDTO, fileDTO)
     }
 
     private fun findAndSetMethodLocalVariablesTypes(methodDTO: MethodDTO) {
@@ -78,21 +86,31 @@ class FileBinder(private val fileDTO: FileDTO) {
 
     private fun findAndSetMethodCallsFromMethod(
         methodDTO: MethodDTO,
-        sourceClassDTO: ClassDTO,
+        sourceClassDTO: ClassDTO?,
         sourceFileDTO: FileDTO
     ) {
         for (methodCall in methodDTO.methodCalls) {
-            val methodThatWasCalled = findMethodCall(methodCall, methodDTO, sourceClassDTO, sourceFileDTO)
-            if (methodThatWasCalled != null) {
-                methodCall.setMethodThatIsCalled(methodThatWasCalled)
-                methodCall.setClassThatIsCalled(methodThatWasCalled.getParenClassDTO())
-                methodCall.setFileThatIsCalled(methodThatWasCalled.getParentFileDTO())
-                logger.debug(
-                    "Method call {} was made to method {}",
-                    methodCall.methodName,
-                    methodCall.getFileThatIsCalled()
-                )
-            }
+            findAndSetMethodCallInfo(methodCall, methodDTO, sourceClassDTO, sourceFileDTO)
+        }
+    }
+
+
+    private fun findAndSetMethodCallInfo(
+        methodCall: MethodCallDTO,
+        sourceMethodDTO: MethodDTO?,
+        sourceClassDTO: ClassDTO?,
+        sourceFileDTO: FileDTO
+    ) {
+        val methodThatWasCalled = findMethodCall(methodCall, sourceMethodDTO, sourceClassDTO, sourceFileDTO)
+        if (methodThatWasCalled != null) {
+            methodCall.setMethodThatIsCalled(methodThatWasCalled)
+            methodCall.setClassThatIsCalled(methodThatWasCalled.getParenClassDTO())
+            methodCall.setFileThatIsCalled(methodThatWasCalled.getParentFileDTO())
+            logger.debug(
+                "Method call {} was made to method {}",
+                methodCall.methodName,
+                methodCall.getFileThatIsCalled()
+            )
         }
     }
 
@@ -141,10 +159,16 @@ class FileBinder(private val fileDTO: FileDTO) {
             if (calledMethodDTO != null) {
                 type = findMethodReturnType(calledMethodDTO)
             }
-        }else if (attribute.isSetByAttributeAccess && isNullOrEmpty(attribute.type)) {
-            val accessedAttributeDTO = findAccessedAttribute(attribute.attributeAccessDTO!!, methodDTO, classDTO, fileDTO)
+        } else if (attribute.isSetByAttributeAccess && isNullOrEmpty(attribute.type)) {
+            val accessedAttributeDTO =
+                findAccessedAttribute(attribute.attributeAccessDTO!!, methodDTO, classDTO, fileDTO)
             if (accessedAttributeDTO != null) {
-                type = findAttributeType(accessedAttributeDTO, null, accessedAttributeDTO.getClassDTO(), accessedAttributeDTO.getFileDTO()!!)
+                type = findAttributeType(
+                    accessedAttributeDTO,
+                    null,
+                    accessedAttributeDTO.getClassDTO(),
+                    accessedAttributeDTO.getFileDTO()!!
+                )
             }
         } else {
             type = attribute.type
@@ -230,11 +254,21 @@ class FileBinder(private val fileDTO: FileDTO) {
             methodThatWasCalledDTO = findMethodInsideClassOrImports(methodCallName, sourceClassDTO, sourceFileDTO)
             if (methodThatWasCalledDTO == null) {
                 methodThatWasCalledDTO =
-                    findConstructorInsideImportsOrSamePackage(methodCallName, sourceClassDTO?.classPackage, sourceFileDTO)
+                    findConstructorInsideImportsOrSamePackage(
+                        methodCallName,
+                        sourceClassDTO?.classPackage,
+                        sourceFileDTO
+                    )
             }
         } else if (sourceClassDTO != null) {
             methodThatWasCalledDTO =
-                findMethodAfterNameAndReference(methodCallName, referenceName, sourceMethodDTO, sourceClassDTO, sourceFileDTO)
+                findMethodAfterNameAndReference(
+                    methodCallName,
+                    referenceName,
+                    sourceMethodDTO,
+                    sourceClassDTO,
+                    sourceFileDTO
+                )
         }
         return methodThatWasCalledDTO
     }
@@ -321,7 +355,8 @@ class FileBinder(private val fileDTO: FileDTO) {
         val attributeDTO = searchAttributeWithName(referenceName, methodDTO, classDTO)
         if (attributeDTO != null) {
             val attributeClass = attributeDTO.type
-            val fullyQualifiedNameOrClassName = findFullyQualifiedNameForClass(attributeClass, classDTO.classPackage, fileDTO) ?: attributeClass
+            val fullyQualifiedNameOrClassName =
+                findFullyQualifiedNameForClass(attributeClass, classDTO.classPackage, fileDTO) ?: attributeClass
             return FileController.findClassInFiles(fullyQualifiedNameOrClassName)
         }
         return null
