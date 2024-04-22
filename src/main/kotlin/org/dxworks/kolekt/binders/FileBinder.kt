@@ -13,30 +13,72 @@ class FileBinder(private val fileDTO: FileDTO) {
     fun bind() {
         for (classDTO in fileDTO.classes) {
             bindFieldsForClass(classDTO)
+            bindMethodsForClass(classDTO)
         }
     }
 
+    private fun bindMethodsForClass(classDTO: ClassDTO) {
+        logger.debug("Binding methods for class ${classDTO.className}")
+        for (methodDTO in classDTO.classMethods) {
+            findAndSetMethodReturnType(methodDTO)
+            findAndSetMethodParametersTypes(methodDTO)
+            findAndSetMethodLocalVariablesTypes(methodDTO)
+        }
+    }
+
+    private fun findAndSetMethodLocalVariablesTypes(methodDTO: MethodDTO) {
+        findAndSetAttributesTypes(methodDTO.methodLocalVariables, methodDTO.getParenClassDTO()!!, methodDTO.getParentFileDTO()!!)
+        logger.debug(
+            "Method {} has local variables types {}",
+            methodDTO.methodName,
+            methodDTO.methodLocalVariables.map { it.type })
+    }
+
+    private fun findAndSetMethodParametersTypes(methodDTO: MethodDTO) {
+        findAndSetAttributesTypes(methodDTO.methodParameters, methodDTO.getParenClassDTO()!!, methodDTO.getParentFileDTO()!!)
+        logger.debug(
+            "Method {} has parameters types {}",
+            methodDTO.methodName,
+            methodDTO.methodParameters.map { it.type })
+    }
+
+    private fun findAndSetMethodReturnType(methodDTO: MethodDTO) {
+        val returnType = findMethodReturnType(methodDTO)
+        methodDTO.setMethodReturnType(returnType)
+        logger.debug("Method ${methodDTO.methodName} has return type $returnType")
+    }
+
     private fun bindFieldsForClass(classDTO: ClassDTO) {
-        logger.debug("\nBinding fields for class ${classDTO.className}")
-        for (field in classDTO.classFields) {
-            if (!field.isCollectionType()) {
-                val type: String? = findAttributeType(field, classDTO, fileDTO)
-                if (type != null) {
-                    field.type = type
-                }
-                logger.debug("Field ${field.name} has type ${field.type}")
+        findAndSetAttributesTypes(classDTO.classFields, classDTO, fileDTO)
+        logger.debug(
+            "Class {} has fields types {}",
+            classDTO.className,
+            classDTO.classFields.map { it.type })
+    }
+
+    private fun findAndSetAttributesTypes(attributes: List<AttributeDTO>, classDTO: ClassDTO, fileDTO: FileDTO) {
+        for (attribute in attributes) {
+            if (!attribute.isCollectionType()) {
+                findAndSetAttributeType(attribute, classDTO, fileDTO)
+                logger.trace("Attribute ${attribute.name} has type ${attribute.type}")
             } else {
-                // todo: it is possible here that we already got the types (ex: List<Zuzu> => Zuzu)
-                val types: List<String> = findGenericAttributeType(field, classDTO, fileDTO)
+                val types: List<String> = findGenericAttributeType(attribute, classDTO, fileDTO)
                 if (types.isNotEmpty()) {
-                    field.collectionType = types
+                    attribute.collectionType = types
                 }
-                logger.debug("Field {} has types {}", field.name, types)
+                logger.trace("Attribute {} has types {}", attribute.name, types)
             }
         }
     }
 
-    fun findAttributeType(attribute: AttributeDTO, classDTO: ClassDTO, fileDTO: FileDTO): String? {
+    private fun findAndSetAttributeType(attribute: AttributeDTO, classDTO: ClassDTO, fileDTO: FileDTO) {
+        val type: String? = findAttributeType(attribute, classDTO, fileDTO)
+        if (type != null) {
+            attribute.type = type
+        }
+    }
+
+    private fun findAttributeType(attribute: AttributeDTO, classDTO: ClassDTO, fileDTO: FileDTO): String? {
         // finding the simple type
         var type: String? = null
         if (attribute.isSetByMethodCall && isNullOrEmpty(attribute.type)) {
