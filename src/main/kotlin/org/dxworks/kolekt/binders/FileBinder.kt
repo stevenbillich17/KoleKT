@@ -26,18 +26,28 @@ class FileBinder(private val fileDTO: FileDTO) {
         }
     }
 
+    private fun bindFieldsForClass(classDTO: ClassDTO) {
+        findAndSetAttributesTypes(classDTO.classFields, null, classDTO, fileDTO)
+        logger.debug(
+            "Class {} has fields types {}",
+            classDTO.className,
+            classDTO.classFields.map { it.type })
+    }
+
     private fun bindMethodsForClass(classDTO: ClassDTO) {
         logger.debug("Binding methods for class ${classDTO.className}")
         for (methodDTO in classDTO.classMethods) {
             findAndSetMethodReturnType(methodDTO)
             findAndSetMethodParametersTypes(methodDTO)
             findAndSetMethodLocalVariablesTypes(methodDTO)
+            findAndSetMethodCallsFromMethod(methodDTO, classDTO, fileDTO)
         }
     }
 
     private fun findAndSetMethodLocalVariablesTypes(methodDTO: MethodDTO) {
         findAndSetAttributesTypes(
             methodDTO.methodLocalVariables,
+            methodDTO,
             methodDTO.getParenClassDTO(),
             methodDTO.getParentFileDTO()!!
         )
@@ -50,6 +60,7 @@ class FileBinder(private val fileDTO: FileDTO) {
     private fun findAndSetMethodParametersTypes(methodDTO: MethodDTO) {
         findAndSetAttributesTypes(
             methodDTO.methodParameters,
+            methodDTO,
             methodDTO.getParenClassDTO(),
             methodDTO.getParentFileDTO()!!
         )
@@ -65,18 +76,35 @@ class FileBinder(private val fileDTO: FileDTO) {
         logger.debug("Method ${methodDTO.methodName} has return type $returnType")
     }
 
-    private fun bindFieldsForClass(classDTO: ClassDTO) {
-        findAndSetAttributesTypes(classDTO.classFields, classDTO, fileDTO)
-        logger.debug(
-            "Class {} has fields types {}",
-            classDTO.className,
-            classDTO.classFields.map { it.type })
+    private fun findAndSetMethodCallsFromMethod(
+        methodDTO: MethodDTO,
+        sourceClassDTO: ClassDTO,
+        sourceFileDTO: FileDTO
+    ) {
+        for (methodCall in methodDTO.methodCalls) {
+            val methodThatWasCalled = findMethodCall(methodCall, methodDTO, sourceClassDTO, sourceFileDTO)
+            if (methodThatWasCalled != null) {
+                methodCall.setMethodThatIsCalled(methodThatWasCalled)
+                methodCall.setClassThatIsCalled(methodThatWasCalled.getParenClassDTO())
+                methodCall.setFileThatIsCalled(methodThatWasCalled.getParentFileDTO())
+                logger.debug(
+                    "Method call {} was made to method {}",
+                    methodCall.methodName,
+                    methodCall.getFileThatIsCalled()
+                )
+            }
+        }
     }
 
-    private fun findAndSetAttributesTypes(attributes: List<AttributeDTO>, classDTO: ClassDTO?, fileDTO: FileDTO) {
+    private fun findAndSetAttributesTypes(
+        attributes: List<AttributeDTO>,
+        methodDTO: MethodDTO?,
+        classDTO: ClassDTO?,
+        fileDTO: FileDTO
+    ) {
         for (attribute in attributes) {
             if (!attribute.isCollectionType()) {
-                findAndSetAttributeType(attribute, classDTO, fileDTO)
+                findAndSetAttributeType(attribute, methodDTO, classDTO, fileDTO)
                 logger.trace("Attribute ${attribute.name} has type ${attribute.type}")
             } else {
                 val types: List<String> = findGenericAttributeType(attribute, classDTO, fileDTO)
@@ -88,20 +116,30 @@ class FileBinder(private val fileDTO: FileDTO) {
         }
     }
 
-    private fun findAndSetAttributeType(attribute: AttributeDTO, classDTO: ClassDTO?, fileDTO: FileDTO) {
-        val type: String? = findAttributeType(attribute, classDTO, fileDTO)
+    private fun findAndSetAttributeType(
+        attribute: AttributeDTO,
+        methodDTO: MethodDTO?,
+        classDTO: ClassDTO?,
+        fileDTO: FileDTO
+    ) {
+        val type: String? = findAttributeType(attribute, methodDTO, classDTO, fileDTO)
         if (type != null) {
             attribute.type = type
         }
     }
 
-    private fun findAttributeType(attribute: AttributeDTO, classDTO: ClassDTO?, fileDTO: FileDTO): String? {
+    private fun findAttributeType(
+        attribute: AttributeDTO,
+        methodDTO: MethodDTO?,
+        classDTO: ClassDTO?,
+        fileDTO: FileDTO
+    ): String? {
         // finding the simple type
         var type: String? = null
         if (attribute.isSetByMethodCall && isNullOrEmpty(attribute.type)) {
-            val methodDTO: MethodDTO? = findMethodCall(attribute.methodCallDTO!!, classDTO, fileDTO)
-            if (methodDTO != null) {
-                type = findMethodReturnType(methodDTO)
+            val calledMethodDTO: MethodDTO? = findMethodCall(attribute.methodCallDTO!!, methodDTO, classDTO, fileDTO)
+            if (calledMethodDTO != null) {
+                type = findMethodReturnType(calledMethodDTO)
             }
         } else {
             type = attribute.type
@@ -158,23 +196,27 @@ class FileBinder(private val fileDTO: FileDTO) {
         return type.isNullOrEmpty() || type == "null"
     }
 
-    private fun findMethodCall(methodCallDTO: MethodCallDTO, classDTO: ClassDTO?, fileDTO: FileDTO): MethodDTO? {
+    private fun findMethodCall(
+        methodCallDTO: MethodCallDTO,
+        methodDTO: MethodDTO?,
+        classDTO: ClassDTO?,
+        fileDTO: FileDTO
+    ): MethodDTO? {
         // first search if there is a reference for that method call
         val methodCallName = methodCallDTO.methodName
         val referenceName = methodCallDTO.referenceName
-        var methodDTO: MethodDTO? = null
+        var methodThatWasCalledDTO: MethodDTO? = null
         if (referenceName == null) {
-            methodDTO = findMethodInsideClassOrImports(methodCallName, classDTO, fileDTO)
-            if (methodDTO == null) {
-                methodDTO = findConstructorInsideImportsOrSamePackage(methodCallName, classDTO?.classPackage, fileDTO)
+            methodThatWasCalledDTO = findMethodInsideClassOrImports(methodCallName, classDTO, fileDTO)
+            if (methodThatWasCalledDTO == null) {
+                methodThatWasCalledDTO =
+                    findConstructorInsideImportsOrSamePackage(methodCallName, classDTO?.classPackage, fileDTO)
             }
         } else if (classDTO != null) {
-            methodDTO = findMethodAfterNameAndReference(methodCallName, referenceName, classDTO, fileDTO)
+            methodThatWasCalledDTO =
+                findMethodAfterNameAndReference(methodCallName, referenceName, methodDTO, classDTO, fileDTO)
         }
-        if (methodCallDTO.methodName == "makeCoolStuff") {
-            logger.debug("Jere")
-        }
-        return methodDTO
+        return methodThatWasCalledDTO
     }
 
     private fun findConstructorInsideImportsOrSamePackage(
@@ -241,11 +283,12 @@ class FileBinder(private val fileDTO: FileDTO) {
     private fun findMethodAfterNameAndReference(
         methodCallName: String,
         referenceName: String,
+        methodDTO: MethodDTO?,
         classDTO: ClassDTO,
         fileDTO: FileDTO
     ): MethodDTO? {
-        // the reference name can be a field from the class
-        val attributeDTO = searchFieldWithName(referenceName, classDTO)
+        // the reference name can be a field or a local variable
+        val attributeDTO = searchAttributeWithName(referenceName, methodDTO, classDTO)
         if (attributeDTO != null) {
             // find attribute class and search for the method
             val attributeClass = attributeDTO.type
@@ -298,7 +341,20 @@ class FileBinder(private val fileDTO: FileDTO) {
         return null
     }
 
-    private fun searchFieldWithName(referenceName: String, classDTO: ClassDTO): AttributeDTO? {
+    private fun searchAttributeWithName(
+        referenceName: String,
+        methodDTO: MethodDTO?,
+        classDTO: ClassDTO
+    ): AttributeDTO? {
+        // search the local variables of the method
+        if (methodDTO != null) {
+            for (field in methodDTO.methodLocalVariables) {
+                if (field.name == referenceName) {
+                    return field
+                }
+            }
+        }
+        // search the fields of the class
         for (field in classDTO.classFields) {
             if (field.name == referenceName) {
                 return field
