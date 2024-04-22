@@ -125,6 +125,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                         classParameter.type().text,
                         AttributeType.FIELD
                     )
+                    field.setClassDTO(parsingContext.classDTO!!)
+                    field.setFileDTO(fileDTO)
                     parsingContext.classDTO!!.classFields.add(field)
                 }
             }
@@ -314,6 +316,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             }
         } else if (ctx.propertyDeclaration() != null && checkIfClassField()) {
             parsePropertyDeclaration(ctx.propertyDeclaration())?.let { attributeDTO ->
+                attributeDTO.setClassDTO(parsingContext.classDTO!!)
+                attributeDTO.setFileDTO(fileDTO)
                 parsingContext.classDTO!!.classFields.add(attributeDTO)
             }
         }

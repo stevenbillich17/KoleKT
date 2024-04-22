@@ -34,8 +34,14 @@ class AttributeDTO {
     var typeOfCollection: CollectionType? = null
     var collectionType: List<String>? = null
 
+    private var classFQN: String? = null
     @Transient
     private var classDTO : ClassDTO? = null
+
+    private var filePath: String? = null
+    @Transient
+    private var fileDTO : FileDTO? = null
+
 
     @Transient
     private val logger = LoggerFactory.getLogger("AttributeDTO@$name")
@@ -106,10 +112,28 @@ class AttributeDTO {
     }
 
     fun setClassDTO(classDTO: ClassDTO) {
+        this.classFQN = classDTO.getFQN()
         this.classDTO = classDTO
+    }
+
+    fun setFileDTO(fileDTO: FileDTO) {
+        this.filePath = fileDTO.filePath
+        this.fileDTO = fileDTO
+    }
+
+    fun getFileDTO() : FileDTO? {
+        return fileDTO
+    }
+
+    fun getFilePath() : String? {
+        return filePath
     }
 
     fun getClassDTO() : ClassDTO? {
         return classDTO
+    }
+
+    fun getClassFQN() : String? {
+        return classFQN
     }
 }

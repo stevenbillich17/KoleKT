@@ -141,6 +141,11 @@ class FileBinder(private val fileDTO: FileDTO) {
             if (calledMethodDTO != null) {
                 type = findMethodReturnType(calledMethodDTO)
             }
+        }else if (attribute.isSetByAttributeAccess && isNullOrEmpty(attribute.type)) {
+            val accessedAttributeDTO = findAccessedAttribute(attribute.attributeAccessDTO!!, methodDTO, classDTO, fileDTO)
+            if (accessedAttributeDTO != null) {
+                type = findAttributeType(accessedAttributeDTO, null, accessedAttributeDTO.getClassDTO(), accessedAttributeDTO.getFileDTO()!!)
+            }
         } else {
             type = attribute.type
         }
@@ -196,25 +201,40 @@ class FileBinder(private val fileDTO: FileDTO) {
         return type.isNullOrEmpty() || type == "null"
     }
 
+    private fun findAccessedAttribute(
+        attributeAccessDTO: AttributeAccessDTO,
+        sourceMethodDTO: MethodDTO?,
+        sourceClassDTO: ClassDTO?,
+        sourceFileDTO: FileDTO
+    ): AttributeDTO? {
+        val calledAttributeName = attributeAccessDTO.attributeName
+        val referenceName = attributeAccessDTO.referenceName
+        val referenceClassDTO = findReferenceClassDTO(referenceName, sourceMethodDTO, sourceClassDTO!!)
+        if (referenceClassDTO != null) {
+            return searchAttributeWithName(calledAttributeName, null, referenceClassDTO)
+        }
+        return null
+    }
+
     private fun findMethodCall(
         methodCallDTO: MethodCallDTO,
-        methodDTO: MethodDTO?,
-        classDTO: ClassDTO?,
-        fileDTO: FileDTO
+        sourceMethodDTO: MethodDTO?,
+        sourceClassDTO: ClassDTO?,
+        sourceFileDTO: FileDTO
     ): MethodDTO? {
         // first search if there is a reference for that method call
         val methodCallName = methodCallDTO.methodName
         val referenceName = methodCallDTO.referenceName
         var methodThatWasCalledDTO: MethodDTO? = null
         if (referenceName == null) {
-            methodThatWasCalledDTO = findMethodInsideClassOrImports(methodCallName, classDTO, fileDTO)
+            methodThatWasCalledDTO = findMethodInsideClassOrImports(methodCallName, sourceClassDTO, sourceFileDTO)
             if (methodThatWasCalledDTO == null) {
                 methodThatWasCalledDTO =
-                    findConstructorInsideImportsOrSamePackage(methodCallName, classDTO?.classPackage, fileDTO)
+                    findConstructorInsideImportsOrSamePackage(methodCallName, sourceClassDTO?.classPackage, sourceFileDTO)
             }
-        } else if (classDTO != null) {
+        } else if (sourceClassDTO != null) {
             methodThatWasCalledDTO =
-                findMethodAfterNameAndReference(methodCallName, referenceName, methodDTO, classDTO, fileDTO)
+                findMethodAfterNameAndReference(methodCallName, referenceName, sourceMethodDTO, sourceClassDTO, sourceFileDTO)
         }
         return methodThatWasCalledDTO
     }
@@ -288,22 +308,23 @@ class FileBinder(private val fileDTO: FileDTO) {
         fileDTO: FileDTO
     ): MethodDTO? {
         // the reference name can be a field or a local variable
-        val attributeDTO = searchAttributeWithName(referenceName, methodDTO, classDTO)
-        if (attributeDTO != null) {
-            // find attribute class and search for the method
-            val attributeClass = attributeDTO.type
-            // build fully qualified name for the attribute class
-            val fullyQualifiedNameOrClassName =
-                findFullyQualifiedNameForClass(attributeClass, classDTO.classPackage, fileDTO) ?: attributeClass
-            val attributeClassDTO =
-                FileController.findClassInFiles(fullyQualifiedNameOrClassName) //todo: maybe it should be fully qualified name here (done)
-            if (attributeClassDTO != null) {
-                return findMethodInsideClassOrImports(methodCallName, attributeClassDTO, fileDTO)
-            }
+        val referenceClassDTO = findReferenceClassDTO(referenceName, methodDTO, classDTO)
+        if (referenceClassDTO != null) {
+            return findMethodInsideClassOrImports(methodCallName, referenceClassDTO, fileDTO)
         }
         return null
         // the reference name can be an import
         // todo: in future we should search for the method in the import
+    }
+
+    private fun findReferenceClassDTO(referenceName: String, methodDTO: MethodDTO?, classDTO: ClassDTO): ClassDTO? {
+        val attributeDTO = searchAttributeWithName(referenceName, methodDTO, classDTO)
+        if (attributeDTO != null) {
+            val attributeClass = attributeDTO.type
+            val fullyQualifiedNameOrClassName = findFullyQualifiedNameForClass(attributeClass, classDTO.classPackage, fileDTO) ?: attributeClass
+            return FileController.findClassInFiles(fullyQualifiedNameOrClassName)
+        }
+        return null
     }
 
     /**
@@ -344,7 +365,7 @@ class FileBinder(private val fileDTO: FileDTO) {
     private fun searchAttributeWithName(
         referenceName: String,
         methodDTO: MethodDTO?,
-        classDTO: ClassDTO
+        classDTO: ClassDTO?
     ): AttributeDTO? {
         // search the local variables of the method
         if (methodDTO != null) {
@@ -355,9 +376,11 @@ class FileBinder(private val fileDTO: FileDTO) {
             }
         }
         // search the fields of the class
-        for (field in classDTO.classFields) {
-            if (field.name == referenceName) {
-                return field
+        if (classDTO != null) {
+            for (field in classDTO.classFields) {
+                if (field.name == referenceName) {
+                    return field
+                }
             }
         }
         return null
