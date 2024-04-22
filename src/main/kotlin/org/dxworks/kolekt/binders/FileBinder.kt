@@ -15,6 +15,15 @@ class FileBinder(private val fileDTO: FileDTO) {
             bindFieldsForClass(classDTO)
             bindMethodsForClass(classDTO)
         }
+        bindFileFunctions(fileDTO)
+    }
+
+    private fun bindFileFunctions(fileDTO: FileDTO) {
+        for (function in fileDTO.functions) {
+            findAndSetMethodReturnType(function)
+            findAndSetMethodParametersTypes(function)
+            findAndSetMethodLocalVariablesTypes(function)
+        }
     }
 
     private fun bindMethodsForClass(classDTO: ClassDTO) {
@@ -27,7 +36,11 @@ class FileBinder(private val fileDTO: FileDTO) {
     }
 
     private fun findAndSetMethodLocalVariablesTypes(methodDTO: MethodDTO) {
-        findAndSetAttributesTypes(methodDTO.methodLocalVariables, methodDTO.getParenClassDTO()!!, methodDTO.getParentFileDTO()!!)
+        findAndSetAttributesTypes(
+            methodDTO.methodLocalVariables,
+            methodDTO.getParenClassDTO(),
+            methodDTO.getParentFileDTO()!!
+        )
         logger.debug(
             "Method {} has local variables types {}",
             methodDTO.methodName,
@@ -35,7 +48,11 @@ class FileBinder(private val fileDTO: FileDTO) {
     }
 
     private fun findAndSetMethodParametersTypes(methodDTO: MethodDTO) {
-        findAndSetAttributesTypes(methodDTO.methodParameters, methodDTO.getParenClassDTO()!!, methodDTO.getParentFileDTO()!!)
+        findAndSetAttributesTypes(
+            methodDTO.methodParameters,
+            methodDTO.getParenClassDTO(),
+            methodDTO.getParentFileDTO()!!
+        )
         logger.debug(
             "Method {} has parameters types {}",
             methodDTO.methodName,
@@ -56,7 +73,7 @@ class FileBinder(private val fileDTO: FileDTO) {
             classDTO.classFields.map { it.type })
     }
 
-    private fun findAndSetAttributesTypes(attributes: List<AttributeDTO>, classDTO: ClassDTO, fileDTO: FileDTO) {
+    private fun findAndSetAttributesTypes(attributes: List<AttributeDTO>, classDTO: ClassDTO?, fileDTO: FileDTO) {
         for (attribute in attributes) {
             if (!attribute.isCollectionType()) {
                 findAndSetAttributeType(attribute, classDTO, fileDTO)
@@ -71,14 +88,14 @@ class FileBinder(private val fileDTO: FileDTO) {
         }
     }
 
-    private fun findAndSetAttributeType(attribute: AttributeDTO, classDTO: ClassDTO, fileDTO: FileDTO) {
+    private fun findAndSetAttributeType(attribute: AttributeDTO, classDTO: ClassDTO?, fileDTO: FileDTO) {
         val type: String? = findAttributeType(attribute, classDTO, fileDTO)
         if (type != null) {
             attribute.type = type
         }
     }
 
-    private fun findAttributeType(attribute: AttributeDTO, classDTO: ClassDTO, fileDTO: FileDTO): String? {
+    private fun findAttributeType(attribute: AttributeDTO, classDTO: ClassDTO?, fileDTO: FileDTO): String? {
         // finding the simple type
         var type: String? = null
         if (attribute.isSetByMethodCall && isNullOrEmpty(attribute.type)) {
@@ -91,7 +108,7 @@ class FileBinder(private val fileDTO: FileDTO) {
         }
         // solving the fully qualified name
         if (type != null) {
-            val typeFQN: String? = findFullyQualifiedNameForClass(type, classDTO.classPackage, fileDTO)
+            val typeFQN: String? = findFullyQualifiedNameForClass(type, classDTO?.classPackage, fileDTO)
             if (typeFQN != null) {
                 return typeFQN
             }
@@ -108,28 +125,26 @@ class FileBinder(private val fileDTO: FileDTO) {
         if (methodDTO.getParentFileDTO() == null) {
             throw RuntimeException("Parent file not found for method ${methodDTO.methodName}")
         }
-        if (methodDTO.getParenClassDTO() != null) {
-            val methodReturnTypeFQN = findFullyQualifiedNameForClass(
-                methodReturnType,
-                methodDTO.getParenClassDTO()!!.classPackage,
-                methodDTO.getParentFileDTO()!!
-            )
-            if (methodReturnTypeFQN != null) {
-                return methodReturnTypeFQN
-            }
+        val methodReturnTypeFQN = findFullyQualifiedNameForClass(
+            methodReturnType,
+            methodDTO.getParenClassDTO()?.classPackage,
+            methodDTO.getParentFileDTO()!!
+        )
+        if (methodReturnTypeFQN != null) {
+            return methodReturnTypeFQN
         }
         // todo: add support for the moment when no parent class file is found (FILE SHOULD BE FOUND)
         return methodReturnType
     }
 
-    private fun findGenericAttributeType(attribute: AttributeDTO, classDTO: ClassDTO, fileDTO: FileDTO): List<String> {
+    private fun findGenericAttributeType(attribute: AttributeDTO, classDTO: ClassDTO?, fileDTO: FileDTO): List<String> {
         val types: List<String>? = attribute.collectionType
         if (!attribute.isCollectionType() || types == null) {
             throw RuntimeException("Attribute ${attribute.name} is not a collection")
         }
         val typesFQN: MutableList<String> = mutableListOf()
         for (type in types) {
-            val typeFQN: String? = findFullyQualifiedNameForClass(type, classDTO.classPackage, fileDTO)
+            val typeFQN: String? = findFullyQualifiedNameForClass(type, classDTO?.classPackage, fileDTO)
             if (typeFQN != null) {
                 typesFQN.add(typeFQN)
             } else {
@@ -143,7 +158,7 @@ class FileBinder(private val fileDTO: FileDTO) {
         return type.isNullOrEmpty() || type == "null"
     }
 
-    private fun findMethodCall(methodCallDTO: MethodCallDTO, classDTO: ClassDTO, fileDTO: FileDTO): MethodDTO? {
+    private fun findMethodCall(methodCallDTO: MethodCallDTO, classDTO: ClassDTO?, fileDTO: FileDTO): MethodDTO? {
         // first search if there is a reference for that method call
         val methodCallName = methodCallDTO.methodName
         val referenceName = methodCallDTO.referenceName
@@ -151,9 +166,9 @@ class FileBinder(private val fileDTO: FileDTO) {
         if (referenceName == null) {
             methodDTO = findMethodInsideClassOrImports(methodCallName, classDTO, fileDTO)
             if (methodDTO == null) {
-                methodDTO = findConstructorInsideImportsOrSamePackage(methodCallName, classDTO.classPackage, fileDTO)
+                methodDTO = findConstructorInsideImportsOrSamePackage(methodCallName, classDTO?.classPackage, fileDTO)
             }
-        } else {
+        } else if (classDTO != null) {
             methodDTO = findMethodAfterNameAndReference(methodCallName, referenceName, classDTO, fileDTO)
         }
         if (methodCallDTO.methodName == "makeCoolStuff") {
@@ -180,6 +195,8 @@ class FileBinder(private val fileDTO: FileDTO) {
         // maybe the constructor is in the same package
         if (classPackage != null) { //todo: maybe in the future we should make sure that there are no matching import
             return findConstructorInPackage(constructorName, classPackage)
+        } else if (fileDTO.filePackage != null) {
+            return findConstructorInPackage(constructorName, fileDTO.filePackage!!)
         }
         return null
     }
@@ -272,6 +289,11 @@ class FileBinder(private val fileDTO: FileDTO) {
             if (typeClass != null) {
                 return typeClass.getFQN()
             }
+        } else if (fileDTO.filePackage != null) {
+            typeClass = findClassInPackage(targetClassName, fileDTO.filePackage!!)
+            if (typeClass != null) {
+                return typeClass.getFQN()
+            }
         }
         return null
     }
@@ -287,14 +309,16 @@ class FileBinder(private val fileDTO: FileDTO) {
 
     private fun findMethodInsideClassOrImports(
         methodCallName: String,
-        classDTO: ClassDTO,
+        classDTO: ClassDTO?,
         fileDTO: FileDTO
     ): MethodDTO? {
         // 1. the method can be inside the class
-        val methodDTOs: MutableList<MethodDTO> = searchMethodsWithName(methodCallName, classDTO)
-        if (methodDTOs.size != 0) {
-            // todo: in future we should match the parameters too
-            return methodDTOs[0]
+        if (classDTO != null) {
+            val methodDTOs: MutableList<MethodDTO> = searchMethodsWithName(methodCallName, classDTO)
+            if (methodDTOs.size != 0) {
+                // todo: in future we should match the parameters too
+                return methodDTOs[0]
+            }
         }
         // 2. the method can be imported
         val importedMethod: MethodDTO? = searchMethodInImports(methodCallName, fileDTO)

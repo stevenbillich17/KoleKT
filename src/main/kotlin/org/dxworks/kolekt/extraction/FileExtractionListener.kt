@@ -264,6 +264,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         parsingContext.insideFunctionDeclaration = true
 
         parseFunctionDeclaration(ctx)?.let { methodDTO ->
+            methodDTO.setParentFileDTO(fileDTO)
             fileDTO.functions.add(methodDTO)
         }
     }
@@ -307,6 +308,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         if (ctx == null) return
         if (ctx.functionDeclaration() != null && checkIfClassMethod()) {
             parseFunctionDeclaration(ctx.functionDeclaration())?.let { methodDTO ->
+                methodDTO.setParentFileDTO(fileDTO)
+                methodDTO.setParentClassDTO(parsingContext.classDTO!!)
                 parsingContext.classDTO!!.classMethods.add(methodDTO)
             }
         } else if (ctx.propertyDeclaration() != null && checkIfClassField()) {
