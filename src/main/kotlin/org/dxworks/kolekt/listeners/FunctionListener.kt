@@ -1,10 +1,7 @@
 package org.dxworks.kolekt.listeners
 
 import org.dxworks.kolekt.context.ParsingContext
-import org.dxworks.kolekt.dtos.AnnotationDTO
-import org.dxworks.kolekt.dtos.AttributeDTO
-import org.dxworks.kolekt.dtos.MethodCallDTO
-import org.dxworks.kolekt.dtos.MethodDTO
+import org.dxworks.kolekt.dtos.*
 import org.dxworks.kolekt.enums.AttributeType
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
@@ -13,6 +10,8 @@ import org.slf4j.LoggerFactory
 
 class FunctionListener : KotlinParserBaseListener() {
     var methodDTO: MethodDTO? = null
+    var classDTO: ClassDTO? = null
+    var fileDTO: FileDTO? = null
     val parsingContext = ParsingContext()
     private val logger: Logger = LoggerFactory.getLogger(FunctionListener::class.java)
 
@@ -24,6 +23,12 @@ class FunctionListener : KotlinParserBaseListener() {
         }
         logger.trace("Function declaration: ${ctx.simpleIdentifier().text}")
         methodDTO = MethodDTO(ctx.simpleIdentifier().text)
+        if (classDTO != null) {
+            methodDTO!!.setParentClassDTO(classDTO!!)
+        }
+        if (fileDTO != null) {
+            methodDTO!!.setParentFileDTO(fileDTO!!)
+        }
     }
 
     override fun enterAnnotation(ctx: KotlinParser.AnnotationContext?) {

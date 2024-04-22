@@ -56,7 +56,10 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
                 3 -> bindAllClasses()
                 4 -> exportClasses()
                 5 -> exportAllClasses()
-                6 -> println("Exiting")
+                6 ->  {
+                    println("Exiting")
+                    return
+                }
                 else -> println("Invalid option")
             }
         }

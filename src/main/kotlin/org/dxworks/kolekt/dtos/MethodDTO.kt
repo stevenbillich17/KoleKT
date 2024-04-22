@@ -16,6 +16,15 @@ data class MethodDTO(val methodName: String) {
     val methodModifiers = mutableListOf<Modifier>()
 
     private var methodReturnType: String = "Void"
+
+    @Transient
+    private var parentClassDTO : ClassDTO? = null
+    private var parentClassFQN: String? = null
+
+    @Transient
+    private var parentFileDTO : FileDTO? = null
+    private var parentFilePath: String? = null
+
     @Transient
     private var methodReturnTypeClassDTO : ClassDTO? = null
 
@@ -34,6 +43,24 @@ data class MethodDTO(val methodName: String) {
                 "   calls=(${buildMethodCallsString()})\n" +
                 "   annotations=(${buildMethodAnnotationsString()})\n" +
                 "   }"
+    }
+
+    fun getParenClassDTO(): ClassDTO? {
+        return parentClassDTO
+    }
+
+    fun setParentClassDTO(classDTO: ClassDTO) {
+        this.parentClassFQN = classDTO.getFQN()
+        this.parentClassDTO = classDTO
+    }
+
+    fun getParentFileDTO(): FileDTO? {
+        return parentFileDTO
+    }
+
+    fun setParentFileDTO(fileDTO: FileDTO) {
+        this.parentFilePath = fileDTO.filePath
+        this.parentFileDTO = fileDTO
     }
 
     fun setMethodReturnType(methodReturnType: String) {
