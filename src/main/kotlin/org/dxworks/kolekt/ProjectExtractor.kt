@@ -85,6 +85,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     fun showMenu() {
+        println("")
         println("Menu:")
         println("1. Print classes Dtos")
         println("2. Bind classes Dtos")
@@ -118,10 +119,16 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 //                classBinder.bind(imports, false)
 //            }
 //        }
+        val numberOfFiles = filesDTOs.size
+        var progress = 0
+        println("Binding classes...")
         filesDTOs.forEach() {
             val fileBinder = FileBinder(it)
             fileBinder.bind()
+            printProgressBar(progress+1, numberOfFiles)
+            progress++
         }
+        println("\nDone binding classes")
     }
 
     private fun chooseClass(): ClassDTO {
@@ -155,6 +162,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
     private fun parseFiles() {
         val total  = pathToFiles.size
+        println("Parsing files...")
         print("\r[]0%")
         for (i in 0..<total) {
             val filePath = pathToFiles[i]
@@ -181,6 +189,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
             }
             printProgressBar(i+1, total)
         }
+        println("\nDone parsing files")
     }
 
     private fun buildTreeFromFile(file: File) : KotlinFileContext {
