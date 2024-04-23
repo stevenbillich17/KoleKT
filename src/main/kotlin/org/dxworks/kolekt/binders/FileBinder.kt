@@ -14,6 +14,7 @@ class FileBinder(private val fileDTO: FileDTO) {
         for (classDTO in fileDTO.classes) {
             bindFieldsForClass(classDTO)
             bindMethodsForClass(classDTO)
+            // todo add binding for super class and subclass (this should increase counters accordingly HIT, DIT, NOC)
         }
         bindFileFunctions(fileDTO)
     }
