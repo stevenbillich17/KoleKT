@@ -3,6 +3,7 @@ package org.dxworks.kolekt
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.analyze.KoleClazzAnalyzer
 import org.dxworks.kolekt.binders.ClassBinder
 import org.dxworks.kolekt.binders.FileBinder
 import org.dxworks.kolekt.details.DictionariesController
@@ -54,15 +55,27 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
                 1 -> enterClassesDtos()
                 2 -> bindClasses()
                 3 -> bindAllClasses()
-                4 -> exportClasses()
-                5 -> exportAllClasses()
-                6 ->  {
+                4 -> computeSpecialMetrics()
+                5 -> computeBasicMetrics()
+                6 -> exportClasses()
+                7 -> exportAllClasses()
+                8 ->  {
                     println("Exiting")
                     return
                 }
                 else -> println("Invalid option")
             }
         }
+    }
+
+    private fun computeBasicMetrics() {
+        val classDTO = chooseClass()
+        val jsonObject = KoleClazzAnalyzer.analyze(classDTO.getFQN(), false)
+        println(jsonObject)
+    }
+
+    private fun computeSpecialMetrics() {
+
     }
 
     private fun exportAllClasses() {
@@ -90,9 +103,11 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         println("1. Print classes Dtos")
         println("2. Bind classes Dtos")
         println("3. Bind all classes Dtos")
-        println("4. Serialize classes Dtos")
-        println("5. Serialize all classes Dtos")
-        println("6. Exit")
+        println("4. Compute special metrics")
+        println("5. Compute basic metrics")
+        println("6. Serialize classes Dtos")
+        println("7. Serialize all classes Dtos")
+        println("8. Exit")
     }
 
     fun enterClassesDtos() {
