@@ -19,6 +19,9 @@ data class MethodDTO(val methodName: String) {
 
     private var methodReturnType: String = "Void"
 
+    private var classesThatCallThisMethod = mutableSetOf<String>()
+    private var methodsThatCallThisMethod = mutableSetOf<String>()
+
     @Transient
     private var parentClassDTO : ClassDTO? = null
     private var parentClassFQN: String? = null
@@ -46,6 +49,7 @@ data class MethodDTO(val methodName: String) {
                 "   methodLocalVariables=(${buildMethodLocalVariablesString()}), \n" +
                 "   calls=(${buildMethodCallsString()})\n" +
                 "   annotations=(${buildMethodAnnotationsString()})\n" +
+                "   classesThatCallThisMethod=(${classesThatCallThisMethod}),\n" +
                 "   }"
     }
 
@@ -148,5 +152,21 @@ data class MethodDTO(val methodName: String) {
 
     fun getCyclomaticComplexity() : Int {
         return methodCyclomaticComplexity
+    }
+
+    fun addClassThatCallsThisMethod(classFQN: String) {
+        classesThatCallThisMethod.add(classFQN)
+    }
+
+    fun getClassesThatCallThisMethod(): Set<String> {
+        return classesThatCallThisMethod
+    }
+
+    fun addMethodThatCallsThisMethod(methodFQN: String) {
+        methodsThatCallThisMethod.add(methodFQN)
+    }
+
+    fun getMethodsThatCallThisMethod(): Set<String> {
+        return methodsThatCallThisMethod
     }
 }

@@ -9,7 +9,8 @@ object KoleClazzAnalyzer {
         NOMMetricCalculator(),
         NOPAMetricCalculator(),
         WMCMetricCalculator(),
-        InheritanceMetricsCalculator()
+        InheritanceMetricsCalculator(),
+        CCMetricCalculator(),
     )
 
     fun analyze(classFQN: String, setInClass: Boolean = false): JsonObject {
