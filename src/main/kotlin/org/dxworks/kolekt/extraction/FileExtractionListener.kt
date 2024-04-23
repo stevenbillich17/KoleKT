@@ -97,7 +97,6 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             val fqnImport = it.identifier().text
             fileDTO.addImport(fqnImport)
             logger.debug("Import: ${it.identifier().text}")
-            // todo: fix bug for AppDestroyer alias import inside MalwareDetector
             ctx.importAlias()?.let { importAlias ->
                 fileDTO.addImportAlias(importAlias.simpleIdentifier().text, fqnImport)
             }
@@ -108,7 +107,26 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         if (ctx == null) return
         parsingContext.classDTO =  ClassDTO(ctx.simpleIdentifier().text)
         parsingContext.classDTO!!.classPackage = fileDTO.filePackage
+
+        // Added things above class declaration
+        parsingContext.classDTO!!.classAnnotations.addAll(parsingContext.mutableListOfAnnotations)
+        parsingContext.mutableListOfAnnotations.clear()
+        parsingContext.classDTO!!.superClass = resolveImport(parsingContext.superClass)
+        parsingContext.superClass = ""
+        parsingContext.implementedInterfaces.forEach {
+            parsingContext.classDTO!!.classInterfaces.add(resolveImport(it))
+        }
+        parsingContext.implementedInterfaces.clear()
+
+        val parentClassDTO = parsingContext.parentClassesDequeued.lastOrNull()
+        if (parentClassDTO != null) {
+            parsingContext.classDTO!!.setParentClass(parentClassDTO)
+            parentClassDTO.addInnerClass(parsingContext.classDTO!!)
+        }
+        parsingContext.parentClassesDequeued.addLast(parsingContext.classDTO!!)
+
         parsingContext.insideClassDeclaration = true
+        logger.trace("Enter class declaration: ${ctx.simpleIdentifier().text}")
     }
 
     override fun exitClassDeclaration(ctx: KotlinParser.ClassDeclarationContext?) {
@@ -116,6 +134,9 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             if (fileDTO.filePackage == null) {
                 fileDTO.filePackage = "UNKNOWN"
             }
+            logger.trace("Exiting class declaration: ${ctx.simpleIdentifier().text}")
+
+            parsingContext.classDTO = parsingContext.parentClassesDequeued.removeLast()
 
             // added primary constructor fields
             ctx.primaryConstructor()?.classParameters()?.classParameter()?.forEach { classParameter ->
@@ -131,17 +152,6 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                 }
             }
 
-            parsingContext.classDTO!!.classAnnotations.addAll(parsingContext.mutableListOfAnnotations)
-            parsingContext.mutableListOfAnnotations.clear()
-
-            parsingContext.classDTO!!.superClass = resolveImport(parsingContext.superClass)
-            parsingContext.superClass = ""
-
-            parsingContext.implementedInterfaces.forEach {
-                parsingContext.classDTO!!.classInterfaces.add(resolveImport(it))
-            }
-            parsingContext.implementedInterfaces.clear()
-
             if (parsingContext.classDTO!!.getConstructors().size == 0) {
                 // no declared constructor, add default constructor
                 val defaultConstructor = MethodDTO(parsingContext.classDTO!!.className!!)
@@ -153,7 +163,6 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
 
             parsingContext.classesDTOs.add(parsingContext.classDTO!!)
             DictionariesController.addClassDTO(parsingContext.classDTO!!)
-            parsingContext.classDTO = null
 
         }
         parsingContext.insideClassDeclaration = false

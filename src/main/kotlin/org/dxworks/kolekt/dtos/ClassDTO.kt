@@ -24,6 +24,14 @@ class ClassDTO(internal val className: String? = null) {
     private val classImports: MutableList<String> = mutableListOf()
     private val classImportsAliases: MutableMap<String, String> = mutableMapOf()
 
+    // nested classes section
+    private var parentClassFQN : String? = null
+    private val innerClassesFQNs = mutableListOf<String>()
+    @Transient
+    private var parentClassDTO: ClassDTO? = null
+    @Transient
+    private val innerClassesDTOs: MutableList<ClassDTO> = mutableListOf()
+
     @Transient
     internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
 
@@ -42,6 +50,8 @@ class ClassDTO(internal val className: String? = null) {
                 " superClass='$superClass',\n" +
                 " imports=${buildImportsString()},\n" +
                 " importsAliases=${buildImportsAliasesString()},\n" +
+                " parentClassFQN=$parentClassFQN,\n" +
+                " innerClassesFQNs=$innerClassesFQNs,\n" +
                 " classSubClassesNames=${buildSubClassesString()},\n" +
                 " classType=$typeOfClass,\n" +
                 " classInterfaces=(${buildClassInterfacesString()}),\n" +
@@ -163,6 +173,32 @@ class ClassDTO(internal val className: String? = null) {
 
     fun getImports(): List<String> {
         return classImports
+    }
+
+    fun addInnerClass(innerClass: ClassDTO) {
+        innerClassesFQNs.add(innerClass.getFQN())
+        innerClassesDTOs.add(innerClass)
+    }
+
+    fun getInnerClassesDTOs(): List<ClassDTO> {
+        return innerClassesDTOs
+    }
+
+    fun getInnerClassesFQNs(): List<String> {
+        return innerClassesFQNs
+    }
+
+    fun setParentClass(parentClass: ClassDTO) {
+        parentClassFQN = parentClass.getFQN()
+        parentClassDTO = parentClass
+    }
+
+    fun getParentClassDTO(): ClassDTO? {
+        return parentClassDTO
+    }
+
+    fun getParentClassFQN(): String? {
+        return parentClassFQN
     }
 
 }

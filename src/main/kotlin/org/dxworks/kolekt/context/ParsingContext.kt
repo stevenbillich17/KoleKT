@@ -5,6 +5,7 @@ import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.MethodCallDTO
 import org.dxworks.kolekt.enums.CollectionType
+import java.util.Deque
 
 class ParsingContext {
     var insideTypeProjection: Boolean = false
@@ -71,4 +72,5 @@ class ParsingContext {
     var implementedInterfaces = mutableListOf<String>()
     var lastSimpleIdentifier: String = ""
     var collectionType: CollectionType? = null
+    var parentClassesDequeued: ArrayDeque<ClassDTO> = ArrayDeque()
 }
