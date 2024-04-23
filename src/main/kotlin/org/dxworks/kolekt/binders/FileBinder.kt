@@ -395,6 +395,9 @@ class FileBinder(private val fileDTO: FileDTO) {
         classDTO: ClassDTO,
         fileDTO: FileDTO
     ): MethodDTO? {
+        if (methodCallName == "writeMalware") {
+            logger.debug("Method has  method calls")
+        }
         // the reference name can be a field or a local variable
         val referenceClassDTO = findReferenceClassDTO(referenceName, methodDTO, classDTO)
         if (referenceClassDTO != null) {

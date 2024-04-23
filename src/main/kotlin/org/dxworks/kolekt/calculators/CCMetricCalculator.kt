@@ -4,6 +4,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.dxworks.kolekt.dtos.ClassDTO
+
 class CCMetricCalculator : MetricsCalculator {
     override fun calculateMetrics(classDTO: ClassDTO, setInClass: Boolean): JsonObject {
         val setOfClasses = mutableSetOf<String>()
@@ -14,6 +15,4 @@ class CCMetricCalculator : MetricsCalculator {
             put("CC", setOfClasses.size)
         }
     }
-
-
 }

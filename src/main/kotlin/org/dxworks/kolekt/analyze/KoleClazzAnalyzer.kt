@@ -11,6 +11,7 @@ object KoleClazzAnalyzer {
         WMCMetricCalculator(),
         InheritanceMetricsCalculator(),
         CCMetricCalculator(),
+        CMMetricCalculator(),
     )
 
     fun analyze(classFQN: String, setInClass: Boolean = false): JsonObject {
