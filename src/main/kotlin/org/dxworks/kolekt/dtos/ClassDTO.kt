@@ -12,7 +12,7 @@ import java.util.*
 class ClassDTO(internal val className: String? = null) {
     internal var classPackage: String? = null
     internal var superClass: String = ""
-    internal var subClasses: MutableList<String> = mutableListOf()
+    internal var subClassesFQNs: MutableList<String> = mutableListOf()
     internal var typeOfClass: ClassTypes = ClassTypes.CLASS
 
     internal val classMethods: MutableList<MethodDTO> = mutableListOf()
@@ -24,13 +24,17 @@ class ClassDTO(internal val className: String? = null) {
     private val classImports: MutableList<String> = mutableListOf()
     private val classImportsAliases: MutableMap<String, String> = mutableMapOf()
 
+    private var HIT = 0
+    private var DIT = 0
+    private var NOC = 0
+
     @Transient
     internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
 
     @Transient
-    var superClassDTO: ClassDTO? = null
+    private var superClassDTO: ClassDTO? = null
     @Transient
-    val mutableListOfSubClasses = mutableListOf<ClassDTO>()
+    private val subClassesDTOs = mutableListOf<ClassDTO>()
 
     @Transient
     private val logger = LoggerFactory.getLogger("ClassDTO@$className")
@@ -40,6 +44,9 @@ class ClassDTO(internal val className: String? = null) {
                 " className='$className',\n" +
                 " classPackage='$classPackage',\n" +
                 " superClass='$superClass',\n" +
+                " HIT=$HIT,\n" +
+                " DIT=$DIT,\n" +
+                " NOC=$NOC,\n" +
                 " imports=${buildImportsString()},\n" +
                 " importsAliases=${buildImportsAliasesString()},\n" +
                 " classSubClassesNames=${buildSubClassesString()},\n" +
@@ -72,7 +79,7 @@ class ClassDTO(internal val className: String? = null) {
 
     private fun buildSubClassesString(): String {
         var result = "\n    "
-        subClasses.forEach { result += "$it\n    " }
+        subClassesFQNs.forEach { result += "$it\n    " }
         return result
     }
 
@@ -134,12 +141,6 @@ class ClassDTO(internal val className: String? = null) {
         typeOfClass = ClassTypes.INTERFACE
     }
 
-    fun addSubClass(classDTO: ClassDTO) {
-        subClasses.add(classDTO.getFQN())
-        mutableListOfSubClasses.add(classDTO)
-        logger.debug("Added sub class: ${classDTO.getFQN()}")
-    }
-
     fun addConstructor(constructor: MethodDTO) {
         if (constructor.methodName != className)  {
             logger.error("Constructor name ${constructor.methodName} does not match class name $className")
@@ -163,6 +164,51 @@ class ClassDTO(internal val className: String? = null) {
 
     fun getImports(): List<String> {
         return classImports
+    }
+
+    fun setSuperClassDTO(classDTO: ClassDTO) {
+        superClassDTO = classDTO
+    }
+
+    fun getSuperClassDTO(): ClassDTO? {
+        return superClassDTO
+    }
+
+    fun addSubClass(classDTO: ClassDTO) {
+        subClassesFQNs.add(classDTO.getFQN())
+        subClassesDTOs.add(classDTO)
+    }
+
+    fun getHIT(): Int {
+        return HIT
+    }
+
+    fun getDIT(): Int {
+        return DIT
+    }
+
+    fun getNOC(): Int {
+        return NOC
+    }
+
+    fun setHIT(hit: Int) {
+        HIT = hit
+    }
+
+    fun setDIT(dit: Int) {
+        DIT = dit
+    }
+
+    fun setNOC(noc: Int) {
+        NOC = noc
+    }
+
+    fun getSubClassesDTOs(): List<ClassDTO> {
+        return subClassesDTOs
+    }
+
+    fun getSubClassesFQNs(): List<String> {
+        return subClassesFQNs
     }
 
 }

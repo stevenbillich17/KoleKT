@@ -31,9 +31,9 @@ class ClassBinder(private val classDTO: ClassDTO) {
         if (superClass != "") {
             val superClassDTO = DictionariesController.findClassAfterFQN(superClass, true)
             if (superClassDTO != DictionariesController.EXTERNAL_CLASS) {
-                classDTO.superClassDTO = superClassDTO
+                classDTO.setSuperClassDTO(superClassDTO)
                 superClassDTO.addSubClass(classDTO)
-                logger.debug("Super class linked to type: ${classDTO.superClassDTO?.getFQN()}")
+                logger.debug("Super class linked to type: ${classDTO.getSuperClassDTO()?.getFQN()}")
             }
         }
     }

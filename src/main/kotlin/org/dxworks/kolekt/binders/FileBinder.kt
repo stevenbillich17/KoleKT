@@ -15,8 +15,39 @@ class FileBinder(private val fileDTO: FileDTO) {
             bindFieldsForClass(classDTO)
             bindMethodsForClass(classDTO)
             // todo add binding for super class and subclass (this should increase counters accordingly HIT, DIT, NOC)
+            bindInheritance(classDTO)
         }
         bindFileFunctions(fileDTO)
+    }
+
+    private fun bindInheritance(classDTO: ClassDTO) {
+        val superClassDTO = FileController.findClassInFiles(classDTO.superClass)
+        if (superClassDTO != null) {
+            classDTO.setSuperClassDTO(superClassDTO)
+            superClassDTO.addSubClass(classDTO)
+            updateInheritanceMetricsHIT(classDTO, superClassDTO) // // todo: discuss if we should update metrics here
+            updateInheritanceMetricsDIT(classDTO, superClassDTO)
+        }
+    }
+
+    private fun updateInheritanceMetricsHIT(subClassDTO: ClassDTO, superClassDTO: ClassDTO?) {
+        if (superClassDTO == null) {
+            return
+        }
+        if (superClassDTO.getHIT() < (subClassDTO.getHIT() + 1)) {
+            superClassDTO.setHIT(subClassDTO.getHIT() + 1)
+            updateInheritanceMetricsHIT(superClassDTO, FileController.findClassInFiles(superClassDTO.superClass))
+        }
+    }
+
+    private fun updateInheritanceMetricsDIT(subClassDTO: ClassDTO?, superClassDTO: ClassDTO?) {
+        if (superClassDTO == null || subClassDTO == null) {
+            return
+        }
+        subClassDTO.setDIT(superClassDTO.getDIT() + 1)
+        for (subClassFQN in subClassDTO.getSubClassesFQNs()) {
+            updateInheritanceMetricsDIT(FileController.findClassInFiles(subClassFQN), subClassDTO)
+        }
     }
 
     private fun bindFileFunctions(fileDTO: FileDTO) {
