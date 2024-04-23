@@ -14,6 +14,7 @@ data class MethodDTO(val methodName: String) {
     val methodLocalVariables = mutableListOf<AttributeDTO>()
     val methodAnnotations = mutableListOf<AnnotationDTO>()
     val methodModifiers = mutableListOf<Modifier>()
+    private var methodCyclomaticComplexity = 1
     private var isConstructor = false
 
     private var methodReturnType: String = "Void"
@@ -38,6 +39,7 @@ data class MethodDTO(val methodName: String) {
                 "   MethodDTO(\n" +
                 "   methodName='$methodName',\n" +
                 "   isConstructor='$isConstructor',\n" +
+                "   cyclomaticComplexity='$methodCyclomaticComplexity',\n" +
                 "   methodReturnType='$methodReturnType',\n" +
                 "   methodModifiers=(${buildMethodModifiersString()}),\n" +
                 "   methodParameters=(${buildMethodParametersString()}), \n" +
@@ -134,5 +136,17 @@ data class MethodDTO(val methodName: String) {
 
     fun isBasicReturnType() : Boolean {
         return ClassTypesUtils.isBasicType(methodReturnType)
+    }
+
+    fun increaseCyclomaticComplexity() {
+        methodCyclomaticComplexity++
+    }
+
+    fun increaseCyclomaticComplexityByValue(value: Int) {
+        methodCyclomaticComplexity += value
+    }
+
+    fun getCyclomaticComplexity() : Int {
+        return methodCyclomaticComplexity
     }
 }

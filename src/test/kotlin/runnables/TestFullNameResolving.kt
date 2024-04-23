@@ -13,10 +13,10 @@ class TestFullNameResolving {
             ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
         projectExtractor.simpleParse()
         projectExtractor.bindAllClasses()
-        testFullNameResolving()
+        testFullNameResolvingForFields()
     }
 
-    private fun testFullNameResolving() {
+    private fun testFullNameResolvingForFields() {
         // create test for TestClass
         testFieldsResolvedNamesForTestClass()
         testFieldsResolvedNamesForMegaType()

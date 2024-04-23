@@ -158,6 +158,52 @@ class FunctionListener : KotlinParserBaseListener() {
         }
     }
 
+    override fun enterJumpExpression(ctx: KotlinParser.JumpExpressionContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        if (ctx.RETURN() == null) {
+            methodDTO!!.increaseCyclomaticComplexity()
+        }
+    }
+
+    override fun enterIfExpression(ctx: KotlinParser.IfExpressionContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+        if (ctx.text.contains("||") || ctx.text.contains("&&")) {
+            methodDTO!!.increaseCyclomaticComplexityByValue(countOccurrences(ctx.text, "||"))
+            methodDTO!!.increaseCyclomaticComplexityByValue(countOccurrences(ctx.text, "&&"))
+        }
+    }
+
+    fun countOccurrences(text: String, toFind: String): Int {
+        return text.windowed(toFind.length, 1, partialWindows = false)
+            .count { it == toFind }
+    }
+
+    override fun enterWhenEntry(ctx: KotlinParser.WhenEntryContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
+    override fun enterWhileStatement(ctx: KotlinParser.WhileStatementContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
+    override fun enterDoWhileStatement(ctx: KotlinParser.DoWhileStatementContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
+    override fun enterForStatement(ctx: KotlinParser.ForStatementContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
+    override fun enterCatchBlock(ctx: KotlinParser.CatchBlockContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
     override fun enterPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
         if (ctx == null || parsingContext.shouldStop) return
         parsingContext.insidePropertyDeclaration = true
