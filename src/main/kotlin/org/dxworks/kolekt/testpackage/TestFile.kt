@@ -12,6 +12,7 @@ class TestClass(var age: Int, var name: String) {
     var height: Double = 5.0
     val mwWriter: MalwareWriter = MalwareWriter()
     val counter = mwWriter.initializeInt()
+    val mwWriterStringAccessed = mwWriter.s
     val amazingMalware = mwWriter.makeCoolStuff()
     var weight = getWeightValue()
     var weight2  = aliasTestMalware()
@@ -41,13 +42,44 @@ class TestClass(var age: Int, var name: String) {
         val xTurbat = 5
         var y: String? = null
         val z = MalwareWriter()
+        val s = z.s
+        // todo: should make the calls and attributes a linked list
+        //val slen = z.s.length
+        //val scsFar = z.makeCoolStuff().hashCode()
+        val scs = z.makeCoolStuff()
         val cpyMwWriter = testReturn()
         z.writeMalware()
         z.writeMalwareWithParameters("ceva", "altceva")
         writeMalwareOutside("ceva" + "wow", "altceva")
     }
+
+    fun functionWithIncreasedComplexity(): Int {
+        val x = 3
+        if (x > 2) {
+            println("x is greater than 2")
+        } else {
+            println("x is not greater than 2")
+        }
+        while (x < 0) {
+            println("x is greater than 0")
+        }
+        for (i in 0..10) {
+            println("i is $i")
+        }
+        when (x) {
+            1 -> println("x is 1")
+            2 -> println("x is 2")
+            else -> println("x is not 1 or 2")
+        }
+        return x
+    }
 }
 
 fun outsideFunction() {
-
+    var x = 5
+    val y = 2
+    if (x == 5 || y == 1) {
+        return
+    }
+    x = 3
 }

@@ -125,6 +125,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                         classParameter.type().text,
                         AttributeType.FIELD
                     )
+                    field.setClassDTO(parsingContext.classDTO!!)
+                    field.setFileDTO(fileDTO)
                     parsingContext.classDTO!!.classFields.add(field)
                 }
             }
@@ -139,6 +141,15 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                 parsingContext.classDTO!!.classInterfaces.add(resolveImport(it))
             }
             parsingContext.implementedInterfaces.clear()
+
+            if (parsingContext.classDTO!!.getConstructors().size == 0) {
+                // no declared constructor, add default constructor
+                val defaultConstructor = MethodDTO(parsingContext.classDTO!!.className!!)
+                defaultConstructor.setMethodReturnType(parsingContext.classDTO!!.getFQN())
+                defaultConstructor.setParentClassDTO(parsingContext.classDTO!!)
+                defaultConstructor.setParentFileDTO(fileDTO)
+                parsingContext.classDTO!!.addConstructor(defaultConstructor)
+            }
 
             parsingContext.classesDTOs.add(parsingContext.classDTO!!)
             DictionariesController.addClassDTO(parsingContext.classDTO!!)
@@ -255,6 +266,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         parsingContext.insideFunctionDeclaration = true
 
         parseFunctionDeclaration(ctx)?.let { methodDTO ->
+            methodDTO.setParentFileDTO(fileDTO)
             fileDTO.functions.add(methodDTO)
         }
     }
@@ -298,10 +310,14 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         if (ctx == null) return
         if (ctx.functionDeclaration() != null && checkIfClassMethod()) {
             parseFunctionDeclaration(ctx.functionDeclaration())?.let { methodDTO ->
+                methodDTO.setParentFileDTO(fileDTO)
+                methodDTO.setParentClassDTO(parsingContext.classDTO!!)
                 parsingContext.classDTO!!.classMethods.add(methodDTO)
             }
         } else if (ctx.propertyDeclaration() != null && checkIfClassField()) {
             parsePropertyDeclaration(ctx.propertyDeclaration())?.let { attributeDTO ->
+                attributeDTO.setClassDTO(parsingContext.classDTO!!)
+                attributeDTO.setFileDTO(fileDTO)
                 parsingContext.classDTO!!.classFields.add(attributeDTO)
             }
         }
@@ -447,6 +463,9 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             methodDTO.methodParameters.addAll(parsingContext.parametersForConstructor)
             parsingContext.parametersForConstructor.clear()
             methodDTO.setMethodReturnType(parsingContext.classDTO!!.getFQN())
+            methodDTO.setParentClassDTO(parsingContext.classDTO!!)
+            methodDTO.setParentFileDTO(fileDTO)
+            methodDTO.setConstructor()
             parsingContext.classDTO!!.addConstructor(methodDTO)
         }
     }
@@ -464,6 +483,10 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         parsingContext.insideFunctionDeclaration = true
         val parserTreeWalker = ParseTreeWalker()
         val functionListener = FunctionListener()
+        if (parsingContext.insideClassBody) {
+            functionListener.classDTO = parsingContext.classDTO
+        }
+        functionListener.fileDTO = fileDTO
         parserTreeWalker.walk(functionListener, functionDeclaration)
         parsingContext.insideFunctionDeclaration = false
         return functionListener.methodDTO

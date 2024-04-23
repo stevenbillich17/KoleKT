@@ -51,7 +51,9 @@ class ParsingContext {
     var wasThereAnCallSuffix: Boolean = false
     var wasThereAnInfixFunctionCall: Boolean = false
     var wasThereAnNavigationSuffix: Boolean = false
+    var wasThereAnReturnForCC: Boolean = false
 
+    var accessedFieldName: String = ""
     var valueName = ""
     var referenceName: String? = ""
     var valueType = ""

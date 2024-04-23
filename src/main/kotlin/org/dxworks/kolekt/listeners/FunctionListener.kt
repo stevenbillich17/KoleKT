@@ -1,10 +1,7 @@
 package org.dxworks.kolekt.listeners
 
 import org.dxworks.kolekt.context.ParsingContext
-import org.dxworks.kolekt.dtos.AnnotationDTO
-import org.dxworks.kolekt.dtos.AttributeDTO
-import org.dxworks.kolekt.dtos.MethodCallDTO
-import org.dxworks.kolekt.dtos.MethodDTO
+import org.dxworks.kolekt.dtos.*
 import org.dxworks.kolekt.enums.AttributeType
 import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParserBaseListener
@@ -13,6 +10,8 @@ import org.slf4j.LoggerFactory
 
 class FunctionListener : KotlinParserBaseListener() {
     var methodDTO: MethodDTO? = null
+    var classDTO: ClassDTO? = null
+    var fileDTO: FileDTO? = null
     val parsingContext = ParsingContext()
     private val logger: Logger = LoggerFactory.getLogger(FunctionListener::class.java)
 
@@ -24,6 +23,12 @@ class FunctionListener : KotlinParserBaseListener() {
         }
         logger.trace("Function declaration: ${ctx.simpleIdentifier().text}")
         methodDTO = MethodDTO(ctx.simpleIdentifier().text)
+        if (classDTO != null) {
+            methodDTO!!.setParentClassDTO(classDTO!!)
+        }
+        if (fileDTO != null) {
+            methodDTO!!.setParentFileDTO(fileDTO!!)
+        }
     }
 
     override fun enterAnnotation(ctx: KotlinParser.AnnotationContext?) {
@@ -153,6 +158,52 @@ class FunctionListener : KotlinParserBaseListener() {
         }
     }
 
+    override fun enterJumpExpression(ctx: KotlinParser.JumpExpressionContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        if (ctx.RETURN() == null) {
+            methodDTO!!.increaseCyclomaticComplexity()
+        }
+    }
+
+    override fun enterIfExpression(ctx: KotlinParser.IfExpressionContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+        if (ctx.text.contains("||") || ctx.text.contains("&&")) {
+            methodDTO!!.increaseCyclomaticComplexityByValue(countOccurrences(ctx.text, "||"))
+            methodDTO!!.increaseCyclomaticComplexityByValue(countOccurrences(ctx.text, "&&"))
+        }
+    }
+
+    fun countOccurrences(text: String, toFind: String): Int {
+        return text.windowed(toFind.length, 1, partialWindows = false)
+            .count { it == toFind }
+    }
+
+    override fun enterWhenEntry(ctx: KotlinParser.WhenEntryContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
+    override fun enterWhileStatement(ctx: KotlinParser.WhileStatementContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
+    override fun enterDoWhileStatement(ctx: KotlinParser.DoWhileStatementContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
+    override fun enterForStatement(ctx: KotlinParser.ForStatementContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
+    override fun enterCatchBlock(ctx: KotlinParser.CatchBlockContext?) {
+        if (ctx == null || parsingContext.shouldStop) return
+        methodDTO!!.increaseCyclomaticComplexity()
+    }
+
     override fun enterPropertyDeclaration(ctx: KotlinParser.PropertyDeclarationContext?) {
         if (ctx == null || parsingContext.shouldStop) return
         parsingContext.insidePropertyDeclaration = true
@@ -165,6 +216,14 @@ class FunctionListener : KotlinParserBaseListener() {
         if (ctx == null || parsingContext.shouldStop) return
         parsingContext.insidePropertyDeclaration = false
         logger.trace("Exiting property declaration: ${ctx.text}")
+
+        // possible attribute access
+        var attributeAccessDTO: AttributeAccessDTO? = null
+        if (parsingContext.wasThereAnNavigationSuffix && !parsingContext.wasThereAnCallSuffix) {
+            attributeAccessDTO = AttributeAccessDTO(parsingContext.accessedFieldName, parsingContext.referenceName!!)
+            logger.debug("Adding attribute access: {}", attributeAccessDTO)
+        }
+
         if (ctx.variableDeclaration() != null) {
             val tempType = ctx.variableDeclaration().type()?.text ?: parsingContext.valueType
 
@@ -177,6 +236,8 @@ class FunctionListener : KotlinParserBaseListener() {
 
             if (tempType == "null" && parsingContext.wasThereAnCallSuffix && parsingContext.wasThereAnInfixFunctionCall) {
                 foundAttribute.setByMethodCall(parsingContext.lastCallSuffixMethodCall!!)
+            } else if (attributeAccessDTO != null) {
+                foundAttribute.setByAttributeAccess(attributeAccessDTO)
             }
 
             logger.debug("Adding local variable: {}", foundAttribute)
@@ -321,7 +382,8 @@ class FunctionListener : KotlinParserBaseListener() {
         parsingContext.wasThereAnNavigationSuffix = true
         if (parsingContext.insideInfixFunctionCall && parsingContext.insideAdditiveExpression && parsingContext.insidePostFixUnarySuffix && ctx.memberAccessOperator() != null) {
             parsingContext.calledMethodName = ctx.simpleIdentifier().text
-            logger.trace("Method name: ${parsingContext.calledMethodName}")
+            parsingContext.accessedFieldName = ctx.simpleIdentifier().text
+            logger.trace("Method name or accessed field: ${parsingContext.calledMethodName}")
         }
     }
 

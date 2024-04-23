@@ -3,8 +3,11 @@ package org.dxworks.kolekt
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.analyze.KoleClazzAnalyzer
 import org.dxworks.kolekt.binders.ClassBinder
+import org.dxworks.kolekt.binders.FileBinder
 import org.dxworks.kolekt.details.DictionariesController
+import org.dxworks.kolekt.details.FileController
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.FileDTO
 import org.dxworks.kolekt.extraction.FileExtractionListener
@@ -51,12 +54,28 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
             when (option) {
                 1 -> enterClassesDtos()
                 2 -> bindClasses()
-                3 -> exportClasses()
-                4 -> exportAllClasses()
-                5 -> println("Exiting")
+                3 -> bindAllClasses()
+                4 -> computeSpecialMetrics()
+                5 -> computeBasicMetrics()
+                6 -> exportClasses()
+                7 -> exportAllClasses()
+                8 ->  {
+                    println("Exiting")
+                    return
+                }
                 else -> println("Invalid option")
             }
         }
+    }
+
+    private fun computeBasicMetrics() {
+        val classDTO = chooseClass()
+        val jsonObject = KoleClazzAnalyzer.analyze(classDTO.getFQN(), false)
+        println(jsonObject)
+    }
+
+    private fun computeSpecialMetrics() {
+
     }
 
     private fun exportAllClasses() {
@@ -79,12 +98,16 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     fun showMenu() {
+        println("")
         println("Menu:")
         println("1. Print classes Dtos")
         println("2. Bind classes Dtos")
-        println("3. Serialize classes Dtos")
-        println("4. Serialize all classes Dtos")
-        println("5. Exit")
+        println("3. Bind all classes Dtos")
+        println("4. Compute special metrics")
+        println("5. Compute basic metrics")
+        println("6. Serialize classes Dtos")
+        println("7. Serialize all classes Dtos")
+        println("8. Exit")
     }
 
     fun enterClassesDtos() {
@@ -104,13 +127,23 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     fun bindAllClasses() {
-        filesDTOs.forEach { fileDTO ->
-            val imports = fileDTO.imports
-            fileDTO.classes.forEach { classDTO ->
-                val classBinder = ClassBinder(classDTO)
-                classBinder.bind(imports, false)
-            }
+//        filesDTOs.forEach { fileDTO ->
+//            val imports = fileDTO.imports
+//            fileDTO.classes.forEach { classDTO ->
+//                val classBinder = ClassBinder(classDTO)
+//                classBinder.bind(imports, false)
+//            }
+//        }
+        val numberOfFiles = filesDTOs.size
+        var progress = 0
+        println("Binding classes...")
+        filesDTOs.forEach() {
+            val fileBinder = FileBinder(it)
+            fileBinder.bind()
+            printProgressBar(progress+1, numberOfFiles)
+            progress++
         }
+        println("\nDone binding classes")
     }
 
     private fun chooseClass(): ClassDTO {
@@ -144,6 +177,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
     private fun parseFiles() {
         val total  = pathToFiles.size
+        println("Parsing files...")
         print("\r[]0%")
         for (i in 0..<total) {
             val filePath = pathToFiles[i]
@@ -162,6 +196,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
                     it.setImportAliases(fileDTO.importAliases)
                 }
                 filesDTOs.add(fileDTO)
+                FileController.addFileDTO(fileDTO)
 
             } catch (e : Exception) {
                 logger.error("Exception at parsing file: {$filePath}. With message: {$e} stack trace:")
@@ -169,6 +204,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
             }
             printProgressBar(i+1, total)
         }
+        println("\nDone parsing files")
     }
 
     private fun buildTreeFromFile(file: File) : KotlinFileContext {

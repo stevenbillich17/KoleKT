@@ -14,8 +14,19 @@ data class MethodDTO(val methodName: String) {
     val methodLocalVariables = mutableListOf<AttributeDTO>()
     val methodAnnotations = mutableListOf<AnnotationDTO>()
     val methodModifiers = mutableListOf<Modifier>()
+    private var methodCyclomaticComplexity = 1
+    private var isConstructor = false
 
     private var methodReturnType: String = "Void"
+
+    @Transient
+    private var parentClassDTO : ClassDTO? = null
+    private var parentClassFQN: String? = null
+
+    @Transient
+    private var parentFileDTO : FileDTO? = null
+    private var parentFilePath: String? = null
+
     @Transient
     private var methodReturnTypeClassDTO : ClassDTO? = null
 
@@ -27,6 +38,8 @@ data class MethodDTO(val methodName: String) {
         return "\n  {\n" +
                 "   MethodDTO(\n" +
                 "   methodName='$methodName',\n" +
+                "   isConstructor='$isConstructor',\n" +
+                "   cyclomaticComplexity='$methodCyclomaticComplexity',\n" +
                 "   methodReturnType='$methodReturnType',\n" +
                 "   methodModifiers=(${buildMethodModifiersString()}),\n" +
                 "   methodParameters=(${buildMethodParametersString()}), \n" +
@@ -36,12 +49,38 @@ data class MethodDTO(val methodName: String) {
                 "   }"
     }
 
+    fun getParenClassDTO(): ClassDTO? {
+        return parentClassDTO
+    }
+
+    fun setParentClassDTO(classDTO: ClassDTO) {
+        this.parentClassFQN = classDTO.getFQN()
+        this.parentClassDTO = classDTO
+    }
+
+    fun getParentFileDTO(): FileDTO? {
+        return parentFileDTO
+    }
+
+    fun setParentFileDTO(fileDTO: FileDTO) {
+        this.parentFilePath = fileDTO.filePath
+        this.parentFileDTO = fileDTO
+    }
+
     fun setMethodReturnType(methodReturnType: String) {
         this.methodReturnType = methodReturnType
     }
 
     fun getMethodReturnType(): String {
         return methodReturnType
+    }
+
+    fun setConstructor() {
+        isConstructor = true
+    }
+
+    fun isConstructor(): Boolean {
+        return isConstructor
     }
 
     private fun buildMethodParametersString(): String {
@@ -97,5 +136,17 @@ data class MethodDTO(val methodName: String) {
 
     fun isBasicReturnType() : Boolean {
         return ClassTypesUtils.isBasicType(methodReturnType)
+    }
+
+    fun increaseCyclomaticComplexity() {
+        methodCyclomaticComplexity++
+    }
+
+    fun increaseCyclomaticComplexityByValue(value: Int) {
+        methodCyclomaticComplexity += value
+    }
+
+    fun getCyclomaticComplexity() : Int {
+        return methodCyclomaticComplexity
     }
 }
