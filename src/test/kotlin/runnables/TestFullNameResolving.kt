@@ -18,9 +18,43 @@ class TestFullNameResolving {
 
     private fun testFullNameResolving() {
         // create test for TestClass
-        testFieldForTestClass()
-        testFieldsForMegaType()
+        testFieldsResolvedNamesForTestClass()
+        testFieldsResolvedNamesForMegaType()
         testFieldsResolvedNamesForMalwareWriter()
+        testFieldResolvedNamesForClassWithConstructor()
+        testFieldResolvedNamesForDifferentMethodOfDeclaring()
+    }
+
+    private fun testFieldResolvedNamesForDifferentMethodOfDeclaring() {
+        val diffClass = FileController.findClassInFiles("org.dxworks.kolekt.testpackage.fieldtypes.declarations.DifferentMethodOfDeclaring")
+            ?: throw Exception("Class not found")
+        assert(diffClass.getFQN() == "org.dxworks.kolekt.testpackage.fieldtypes.declarations.DifferentMethodOfDeclaring")
+        assert(findField(diffClass, "constructorParameter").type == "String")
+        assert(findField(diffClass, "nullableString").type == "String")
+        assert(findField(diffClass, "nonNullableString").type == "String")
+        assert(findField(diffClass, "implicitlyTypedString").type == "String")
+        assert(findField(diffClass, "array").collectionType == listOf("Int"))
+        assert(findField(diffClass, "arrayOfHiddenOmega").collectionType == listOf("org.dxworks.kolekt.testpackage.fieldtypes.hidden.HiddenOmega"))
+        assert(findField(diffClass, "list").collectionType == listOf("Int"))
+        assert(findField(diffClass, "set").collectionType == listOf("Int"))
+        assert(findField(diffClass, "map").collectionType == listOf("Int", "String"))
+        assert(findField(diffClass, "mutableList").collectionType == listOf("Int"))
+        assert(findField(diffClass, "mutableSet").collectionType == listOf("Long"))
+        assert(findField(diffClass, "mutableMap").collectionType == listOf("Int", "String"))
+        assert(findField(diffClass, "collection").collectionType == listOf("String"))
+        assert(findField(diffClass, "mutableCollection").collectionType == listOf("String"))
+        assert(findField(diffClass, "iterable").collectionType == listOf("String"))
+        assert(findField(diffClass, "sequence").collectionType == listOf("String"))
+
+    }
+
+    private fun testFieldResolvedNamesForClassWithConstructor() {
+        val classWithConstructor: ClassDTO = FileController.findClassInFiles("org.dxworks.kolekt.testpackage.fieldtypes.ClassWithConstructor")
+            ?: throw Exception("Class not found")
+        assert(classWithConstructor.getFQN() == "org.dxworks.kolekt.testpackage.fieldtypes.ClassWithConstructor")
+        assert(findField(classWithConstructor, "name").type == "String")
+        assert(findField(classWithConstructor, "age").type == "Int")
+        assert(findField(classWithConstructor, "hiddenOmega").type == "org.dxworks.kolekt.testpackage.fieldtypes.hidden.HiddenOmega")
     }
 
     private fun testFieldsResolvedNamesForMalwareWriter() {
@@ -30,7 +64,7 @@ class TestFullNameResolving {
         assert(findField(malwareWriter, "s").type == "String")
     }
 
-    private fun testFieldsForMegaType() {
+    private fun testFieldsResolvedNamesForMegaType() {
         val megaType: ClassDTO = FileController.findClassInFiles("org.dxworks.kolekt.testpackage.fieldtypes.MegaType")
             ?: throw Exception("Class not found")
         assert(megaType.getFQN() == "org.dxworks.kolekt.testpackage.fieldtypes.MegaType")
@@ -39,7 +73,7 @@ class TestFullNameResolving {
         assert(findField(megaType, "megaHiddenOmega").type == "org.dxworks.kolekt.testpackage.fieldtypes.hidden.HiddenOmega")
     }
 
-    private fun testFieldForTestClass() {
+    private fun testFieldsResolvedNamesForTestClass() {
         val testClass: ClassDTO = FileController.findClassInFiles("org.dxworks.kolekt.testpackage.TestClass")
             ?: throw Exception("Class not found")
         assert(testClass.getFQN() == "org.dxworks.kolekt.testpackage.TestClass")
