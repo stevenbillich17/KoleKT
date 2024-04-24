@@ -14,11 +14,12 @@ object KoleClazzAnalyzer {
         CMMetricCalculator(),
         NProtMMetricCalculator(),
         AMWMetricCalculator(),
+        CINTMetricCalculator(),
+        CDISPMetricCalculator(),
     )
 
     fun analyze(classFQN: String, setInClass: Boolean = false): JsonObject {
         val classDTO = FileController.findClassInFiles(classFQN) ?: throw IllegalArgumentException("Class not found")
-
 
         val metrics = metricsCalculators.map { it.calculateMetrics(classDTO, setInClass) }
 
