@@ -14,8 +14,8 @@ class AttributeDTO {
     constructor (name: String,  type: String, attributeType: AttributeType) {
         this.name = name.trim()
         this.type = type.trim()
-        if (type.contains("?")) {
-            this.type = type.replace("?", "")
+        if (this.type.contains("?")) {
+            this.type = this.type.replace("?", "")
             isNullable = true
         }
         this.attributeType = attributeType
