@@ -5,7 +5,7 @@ import org.dxworks.kolekt.calculators.*
 import org.dxworks.kolekt.details.FileController
 
 object KoleClazzAnalyzer {
-    val metricsCalculators: List<MetricsCalculator> = listOf(
+    private val metricsCalculators: List<MetricsCalculator> = listOf(
         NOMMetricCalculator(),
         NOPAMetricCalculator(),
         WMCMetricCalculator(),
@@ -16,6 +16,7 @@ object KoleClazzAnalyzer {
         AMWMetricCalculator(),
         CINTMetricCalculator(),
         CDISPMetricCalculator(),
+        BOvRMetricCalculator(),
     )
 
     fun analyze(classFQN: String, setInClass: Boolean = false): JsonObject {
