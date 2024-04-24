@@ -13,6 +13,7 @@ object KoleClazzAnalyzer {
         CCMetricCalculator(),
         CMMetricCalculator(),
         NProtMMetricCalculator(),
+        AMWMetricCalculator(),
     )
 
     fun analyze(classFQN: String, setInClass: Boolean = false): JsonObject {
