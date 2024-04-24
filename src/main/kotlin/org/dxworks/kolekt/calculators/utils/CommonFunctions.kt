@@ -3,8 +3,9 @@ package org.dxworks.kolekt.calculators.utils
 
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.MethodDTO
+import org.dxworks.kolekt.enums.Modifier
 
-object CommonCalculator {
+object CommonFunctions {
 
     fun computeTotalCyclomaticComplexity(methods: List<MethodDTO>): Int {
         var totalCyclomaticComplexity = 0
@@ -25,5 +26,10 @@ object CommonCalculator {
             }
         }
         return totalMethodCalls
+    }
+
+    fun checkIfPublic(attributeModifiers: MutableList<Modifier>): Boolean {
+        val restrictingModifiers = listOf(Modifier.PRIVATE, Modifier.PROTECTED, Modifier.INTERNAL)
+        return attributeModifiers.none { restrictingModifiers.contains(it) }
     }
 }
