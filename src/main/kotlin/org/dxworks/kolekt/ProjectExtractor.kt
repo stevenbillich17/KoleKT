@@ -48,7 +48,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
     fun printInteractiveInferface() {
         var option = 0
-        while (option !=5) {
+        while (option != 8) {
             showMenu()
             option = readLine()?.toInt() ?: 0
             when (option) {

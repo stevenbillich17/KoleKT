@@ -233,8 +233,7 @@ class FunctionListener : KotlinParserBaseListener() {
                 tempType,
                 AttributeType.LOCAL_VARIABLE
             )
-
-            if (tempType == "null" && parsingContext.wasThereAnCallSuffix && parsingContext.wasThereAnInfixFunctionCall) {
+            if ((tempType == "" || tempType == "null") && parsingContext.wasThereAnCallSuffix && parsingContext.wasThereAnInfixFunctionCall) {
                 foundAttribute.setByMethodCall(parsingContext.lastCallSuffixMethodCall!!)
             } else if (attributeAccessDTO != null) {
                 foundAttribute.setByAttributeAccess(attributeAccessDTO)

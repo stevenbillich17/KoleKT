@@ -54,6 +54,8 @@ class TestClass(var age: Int, var name: String) {
     }
 
     fun functionWithIncreasedComplexity(): Int {
+        val b = MalwareWriter()
+        b.writeMalwareWithParameters("x", "y")
         val x = 3
         if (x > 2) {
             println("x is greater than 2")

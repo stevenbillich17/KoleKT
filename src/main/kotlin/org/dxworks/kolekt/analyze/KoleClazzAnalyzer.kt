@@ -5,16 +5,22 @@ import org.dxworks.kolekt.calculators.*
 import org.dxworks.kolekt.details.FileController
 
 object KoleClazzAnalyzer {
-    val metricsCalculators: List<MetricsCalculator> = listOf(
+    private val metricsCalculators: List<MetricsCalculator> = listOf(
         NOMMetricCalculator(),
         NOPAMetricCalculator(),
         WMCMetricCalculator(),
-        InheritanceMetricsCalculator()
+        InheritanceMetricsCalculator(),
+        CCMetricCalculator(),
+        CMMetricCalculator(),
+        NProtMMetricCalculator(),
+        AMWMetricCalculator(),
+        CINTMetricCalculator(),
+        CDISPMetricCalculator(),
+        BOvRMetricCalculator(),
     )
 
     fun analyze(classFQN: String, setInClass: Boolean = false): JsonObject {
         val classDTO = FileController.findClassInFiles(classFQN) ?: throw IllegalArgumentException("Class not found")
-
 
         val metrics = metricsCalculators.map { it.calculateMetrics(classDTO, setInClass) }
 

@@ -6,11 +6,15 @@ import kotlinx.serialization.json.put
 import org.dxworks.kolekt.calculators.utils.CommonFunctions
 import org.dxworks.kolekt.dtos.ClassDTO
 
-class WMCMetricCalculator : MetricsCalculator {
+class AMWMetricCalculator : MetricsCalculator {
     override fun calculateMetrics(classDTO: ClassDTO, setInClass: Boolean): JsonObject {
+        var amw : Double = 0.0
         val wmc = CommonFunctions.computeTotalCyclomaticComplexity(classDTO.classMethods)
+        if (classDTO.classMethods.isNotEmpty()) {
+            amw = wmc.toDouble() / classDTO.classMethods.size
+        }
         return buildJsonObject {
-            put("WMC", wmc)
+            put("AMW", amw)
         }
     }
 }

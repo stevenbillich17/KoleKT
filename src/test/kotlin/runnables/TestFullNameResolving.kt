@@ -4,6 +4,7 @@ import org.dxworks.kolekt.ProjectExtractor
 import org.dxworks.kolekt.details.FileController
 import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.ClassDTO
+import org.dxworks.kolekt.dtos.MethodDTO
 import kotlin.test.Test
 
 class TestFullNameResolving {
@@ -14,6 +15,26 @@ class TestFullNameResolving {
         projectExtractor.simpleParse()
         projectExtractor.bindAllClasses()
         testFullNameResolvingForFields()
+        testFullNamesResolvingForMethods()
+    }
+
+    private fun testFullNamesResolvingForMethods() {
+        testFullNameresolvingForTestFilefun2()
+    }
+
+    private fun testFullNameresolvingForTestFilefun2() {
+        val testClass = FileController.findClassInFiles("org.dxworks.kolekt.testpackage.TestClass")
+            ?: throw Exception("Class not found")
+        val methodDTO = testClass.classMethods.find { it.methodName == "fun2" } ?: throw Exception("Method not found")
+        assert(findParameter(methodDTO, "m1").type == "String")
+        assert(findParameter(methodDTO, "m2").type == "Double")
+        assert(findMethodLocalVariable(methodDTO, "x").type == "String")
+        assert(findMethodLocalVariable(methodDTO, "xTurbat").type == "Integer")
+        assert(findMethodLocalVariable(methodDTO, "y").type == "String")
+        assert(findMethodLocalVariable(methodDTO, "z").type == "org.dxworks.kolekt.testpackage.malware.MalwareWriter")
+        assert(findMethodLocalVariable(methodDTO, "s").type == "String")
+        assert(findMethodLocalVariable(methodDTO, "scs").type == "org.dxworks.kolekt.testpackage.malware.AmazingMalware")
+        assert(findMethodLocalVariable(methodDTO, "cpyMwWriter").type == "org.dxworks.kolekt.testpackage.malware.MalwareWriter")
     }
 
     private fun testFullNameResolvingForFields() {
@@ -94,5 +115,13 @@ class TestFullNameResolving {
 
     private fun findField(testClass: ClassDTO, fieldName: String): AttributeDTO {
         return testClass.classFields.find { it.name == fieldName } ?: throw Exception("Field not found")
+    }
+
+    private fun findParameter(methodDTO: MethodDTO, parameterName: String): AttributeDTO {
+        return methodDTO.methodParameters.find { it.name == parameterName } ?: throw Exception("Parameter not found")
+    }
+
+    private fun findMethodLocalVariable(methodDTO: MethodDTO, variableName: String): AttributeDTO {
+        return methodDTO.methodLocalVariables.find { it.name == variableName } ?: throw Exception("Local variable not found")
     }
 }

@@ -135,15 +135,37 @@ class FileBinder(private val fileDTO: FileDTO) {
     ) {
         val methodThatWasCalled = findMethodCall(methodCall, sourceMethodDTO, sourceClassDTO, sourceFileDTO)
         if (methodThatWasCalled != null) {
-            methodCall.setMethodThatIsCalled(methodThatWasCalled)
-            methodCall.setClassThatIsCalled(methodThatWasCalled.getParenClassDTO())
-            methodCall.setFileThatIsCalled(methodThatWasCalled.getParentFileDTO())
+            setReferencesInsideMethodCall(methodCall, methodThatWasCalled)
+            setReferencesInsideCalledMethod(sourceClassDTO, methodThatWasCalled, sourceMethodDTO)
             logger.debug(
                 "Method call {} was made to method {}",
                 methodCall.methodName,
                 methodCall.getFileThatIsCalled()
             )
         }
+    }
+
+    private fun setReferencesInsideMethodCall(
+        methodCall: MethodCallDTO,
+        methodThatWasCalled: MethodDTO
+    ) {
+        methodCall.setMethodThatIsCalled(methodThatWasCalled)
+        methodCall.setClassThatIsCalled(methodThatWasCalled.getParenClassDTO())
+        methodCall.setFileThatIsCalled(methodThatWasCalled.getParentFileDTO())
+    }
+
+    private fun setReferencesInsideCalledMethod(
+        sourceClassDTO: ClassDTO?,
+        methodThatWasCalled: MethodDTO,
+        sourceMethodDTO: MethodDTO?
+    ) {
+        if (sourceClassDTO != null && sourceClassDTO != methodThatWasCalled.getParenClassDTO()) {
+            methodThatWasCalled.addClassThatCallsThisMethod(sourceClassDTO.getFQN())
+            if (sourceMethodDTO != null) {
+                methodThatWasCalled.addMethodThatCallsThisMethod(sourceClassDTO.getFQN() + "@" + sourceMethodDTO.methodName)
+            }
+        }
+        // todo: add support for references to the method but when the method is called from file level not class level
     }
 
     private fun findAndSetAttributesTypes(
@@ -373,6 +395,9 @@ class FileBinder(private val fileDTO: FileDTO) {
         classDTO: ClassDTO,
         fileDTO: FileDTO
     ): MethodDTO? {
+        if (methodCallName == "writeMalware") {
+            logger.debug("Method has  method calls")
+        }
         // the reference name can be a field or a local variable
         val referenceClassDTO = findReferenceClassDTO(referenceName, methodDTO, classDTO)
         if (referenceClassDTO != null) {
