@@ -82,6 +82,9 @@ object FileController {
         for (i in 0..<n) {
             val fileToBeRemoved = filesThatAreCached.removeLast() ?: continue
             classesDictionaryCache.removeClassesForFile(fileToBeRemoved!!)
+            if (allFiles[fileToBeRemoved] == null) {
+                throw IllegalArgumentException("File not found")
+            }
             allFiles[fileToBeRemoved]!!.storeFileOnDisk(pathOnDisk!!)
         }
     }

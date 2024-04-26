@@ -24,7 +24,6 @@ import kotlin.io.path.pathString
 class ProjectExtractor(private val pathToProject: String, private val pathToGenerated: String? = null) {
     val kotlinExtension = ".kt"
     var pathToFiles: MutableList<String> = mutableListOf()
-    //var filesDTOs: MutableList<FileDTO> = mutableListOf()
     val logger = LoggerFactory.getLogger(ProjectExtractor::class.java)
 
     init {
@@ -40,15 +39,22 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         bindAllClasses()
     }
 
+    fun parseAndSaveToDisk(customCachePlace: String) {
+        val filePaths = readPathToFiles(pathToProject)
+        FileController.setPathOnDisk(customCachePlace)
+        parseFiles(filePaths)
+        FileController.storeAllFilesOnDisk()
+    }
+
     fun parse() {
-        readPathToFiles()
+        readPathToFiles(pathToProject)
         parseFiles()
         printDetailsFromFiles()
         printInteractiveInferface()
     }
 
     fun simpleParse() {
-        readPathToFiles()
+        readPathToFiles(pathToProject)
         parseFiles()
     }
 
@@ -184,7 +190,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         print("\r[$progressBar] ${String.format("%.2f", progressPercentage * 100)}%")
     }
 
-    private fun parseFiles() {
+    private fun parseFiles(pathToFiles: MutableList<String> = this.pathToFiles) {
         val total  = pathToFiles.size
         println("Parsing files...")
         print("\r[]0%")
@@ -224,13 +230,15 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         return parser.kotlinFile()
     }
 
-    private fun readPathToFiles() {
+    private fun readPathToFiles(pathToProject: String): MutableList<String> {
+        val localPathToFiles = mutableListOf<String>()
         val folderPath = Paths.get(pathToProject)
         val visitor = object : SimpleFileVisitor<Path>() {
             override fun visitFile(file: Path?, attrs: BasicFileAttributes?): FileVisitResult {
                 file?.let {
                     if (it.toString().endsWith(kotlinExtension)) {
                         pathToFiles.add(it.toString())
+                        localPathToFiles.add(it.toString())
                         logger.debug("Added new path: {{}}", it)
                     }
                 }
@@ -246,6 +254,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         }
 
         Files.walkFileTree(folderPath, visitor)
+        return localPathToFiles
     }
 
 }
