@@ -146,8 +146,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
                 // no declared constructor, add default constructor
                 val defaultConstructor = MethodDTO(parsingContext.classDTO!!.className!!)
                 defaultConstructor.setMethodReturnType(parsingContext.classDTO!!.getFQN())
-                defaultConstructor.setParentClassDTO(parsingContext.classDTO!!)
-                defaultConstructor.setParentFileDTO(fileDTO)
+                defaultConstructor.setParentClass(parsingContext.classDTO!!)
+                defaultConstructor.setParentFile(fileDTO)
                 parsingContext.classDTO!!.addConstructor(defaultConstructor)
             }
 
@@ -266,7 +266,7 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         parsingContext.insideFunctionDeclaration = true
 
         parseFunctionDeclaration(ctx)?.let { methodDTO ->
-            methodDTO.setParentFileDTO(fileDTO)
+            methodDTO.setParentFile(fileDTO)
             fileDTO.functions.add(methodDTO)
         }
     }
@@ -310,8 +310,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
         if (ctx == null) return
         if (ctx.functionDeclaration() != null && checkIfClassMethod()) {
             parseFunctionDeclaration(ctx.functionDeclaration())?.let { methodDTO ->
-                methodDTO.setParentFileDTO(fileDTO)
-                methodDTO.setParentClassDTO(parsingContext.classDTO!!)
+                methodDTO.setParentFile(fileDTO)
+                methodDTO.setParentClass(parsingContext.classDTO!!)
                 parsingContext.classDTO!!.classMethods.add(methodDTO)
             }
         } else if (ctx.propertyDeclaration() != null && checkIfClassField()) {
@@ -463,8 +463,8 @@ class FileExtractionListener(private val pathToFile: String, private val name: S
             methodDTO.methodParameters.addAll(parsingContext.parametersForConstructor)
             parsingContext.parametersForConstructor.clear()
             methodDTO.setMethodReturnType(parsingContext.classDTO!!.getFQN())
-            methodDTO.setParentClassDTO(parsingContext.classDTO!!)
-            methodDTO.setParentFileDTO(fileDTO)
+            methodDTO.setParentClass(parsingContext.classDTO!!)
+            methodDTO.setParentFile(fileDTO)
             methodDTO.setConstructor()
             parsingContext.classDTO!!.addConstructor(methodDTO)
         }

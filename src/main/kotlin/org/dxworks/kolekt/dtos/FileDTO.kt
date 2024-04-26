@@ -1,7 +1,10 @@
 package org.dxworks.kolekt.dtos
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.slf4j.LoggerFactory
 
+@Serializable
 data class FileDTO(val filePath: String,val fileName: String) {
     internal var filePackage: String? = null
     internal val classes: MutableList<ClassDTO> = mutableListOf()
@@ -9,6 +12,7 @@ data class FileDTO(val filePath: String,val fileName: String) {
     internal val functions: MutableList<MethodDTO> = mutableListOf()
     internal val importNames: MutableMap<String, String> = mutableMapOf()
     internal val importAliases: MutableMap<String, String> = mutableMapOf()
+    @Transient
     private val logger = LoggerFactory.getLogger("FileDTO@$fileName")
 
     fun addClasses(classesDTOs: List<ClassDTO>) {
@@ -61,6 +65,10 @@ data class FileDTO(val filePath: String,val fileName: String) {
             return "$filePackage.$shortName"
         }
         return shortName
+    }
+
+    fun getFileSavedName(): String {
+        return "$filePackage.$fileName"
     }
 
     override fun toString(): String {

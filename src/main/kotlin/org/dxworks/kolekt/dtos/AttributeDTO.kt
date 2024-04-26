@@ -35,12 +35,8 @@ class AttributeDTO {
     var collectionType: List<String>? = null
 
     private var classFQN: String? = null
-    @Transient
-    private var classDTO : ClassDTO? = null
 
-    private var filePath: String? = null
-    @Transient
-    private var fileDTO : FileDTO? = null
+    private var fileSavedName: String? = null
 
 
     @Transient
@@ -113,24 +109,14 @@ class AttributeDTO {
 
     fun setClassDTO(classDTO: ClassDTO) {
         this.classFQN = classDTO.getFQN()
-        this.classDTO = classDTO
     }
 
     fun setFileDTO(fileDTO: FileDTO) {
-        this.filePath = fileDTO.filePath
-        this.fileDTO = fileDTO
+        this.fileSavedName = fileDTO.filePackage + "." + fileDTO.fileName
     }
 
-    fun getFileDTO() : FileDTO? {
-        return fileDTO
-    }
-
-    fun getFilePath() : String? {
-        return filePath
-    }
-
-    fun getClassDTO() : ClassDTO? {
-        return classDTO
+    fun getFileSavedName() : String? {
+        return fileSavedName
     }
 
     fun getClassFQN() : String? {

@@ -22,13 +22,8 @@ data class MethodDTO(val methodName: String) {
     private var classesThatCallThisMethod = mutableSetOf<String>()
     private var methodsThatCallThisMethod = mutableSetOf<String>()
 
-    @Transient
-    private var parentClassDTO : ClassDTO? = null
     private var parentClassFQN: String? = null
-
-    @Transient
-    private var parentFileDTO : FileDTO? = null
-    private var parentFilePath: String? = null
+    private var parentFileSavedName: String? = null
 
     @Transient
     private var methodReturnTypeClassDTO : ClassDTO? = null
@@ -53,22 +48,20 @@ data class MethodDTO(val methodName: String) {
                 "   }"
     }
 
-    fun getParenClassDTO(): ClassDTO? {
-        return parentClassDTO
-    }
-
-    fun setParentClassDTO(classDTO: ClassDTO) {
+    fun setParentClass(classDTO: ClassDTO) {
         this.parentClassFQN = classDTO.getFQN()
-        this.parentClassDTO = classDTO
     }
 
-    fun getParentFileDTO(): FileDTO? {
-        return parentFileDTO
+    fun getParentClassFQN(): String? {
+        return parentClassFQN
     }
 
-    fun setParentFileDTO(fileDTO: FileDTO) {
-        this.parentFilePath = fileDTO.filePath
-        this.parentFileDTO = fileDTO
+    fun setParentFile(fileDTO: FileDTO) {
+        this.parentFileSavedName = fileDTO.filePackage + "." + fileDTO.fileName
+    }
+
+    fun getParentFileSavedName(): String? {
+        return parentFileSavedName
     }
 
     fun setMethodReturnType(methodReturnType: String) {

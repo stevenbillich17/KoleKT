@@ -4,12 +4,10 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.analyze.KoleClazzAnalyzer
-import org.dxworks.kolekt.binders.ClassBinder
 import org.dxworks.kolekt.binders.FileBinder
 import org.dxworks.kolekt.details.DictionariesController
 import org.dxworks.kolekt.details.FileController
 import org.dxworks.kolekt.dtos.ClassDTO
-import org.dxworks.kolekt.dtos.FileDTO
 import org.dxworks.kolekt.extraction.FileExtractionListener
 import org.dxworks.kolekt.serialization.KoleSerializer
 import org.jetbrains.kotlin.spec.grammar.KotlinLexer
@@ -17,10 +15,6 @@ import org.jetbrains.kotlin.spec.grammar.KotlinParser
 import org.jetbrains.kotlin.spec.grammar.KotlinParser.KotlinFileContext
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.ByteArrayInputStream
-import java.io.FileOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import java.io.IOException
 import java.lang.Exception
 import java.nio.file.*
@@ -30,9 +24,21 @@ import kotlin.io.path.pathString
 class ProjectExtractor(private val pathToProject: String, private val pathToGenerated: String? = null) {
     val kotlinExtension = ".kt"
     var pathToFiles: MutableList<String> = mutableListOf()
-    var filesDTOs: MutableList<FileDTO> = mutableListOf()
+    //var filesDTOs: MutableList<FileDTO> = mutableListOf()
     val logger = LoggerFactory.getLogger(ProjectExtractor::class.java)
 
+    init {
+        FileController.setPathOnDisk(pathToGenerated)
+    }
+
+
+    fun bindFromDisk(maximumNumberOfFiles: Int, pathOnDisk: String) {
+        FileController.clean()
+        FileController.setMaximumNumberOfFiles(maximumNumberOfFiles)
+        FileController.setPathOnDisk(pathOnDisk)
+        FileController.loadFilesFromDisk()
+        bindAllClasses()
+    }
 
     fun parse() {
         readPathToFiles()
@@ -84,11 +90,11 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
             return
         }
         // store all the classes from all the files
-        filesDTOs.forEach { fileDTO ->
-            fileDTO.classes.forEach { classDTO ->
-                File( "${pathToGenerated}\\${classDTO.getFQN()}.json").writeText(KoleSerializer.serialize(classDTO))
-            }
-        }
+//        filesDTOs.forEach { fileDTO ->
+//            fileDTO.classes.forEach { classDTO ->
+//                File( "${pathToGenerated}\\${classDTO.getFQN()}.json").writeText(KoleSerializer.serialize(classDTO))
+//            }
+//        }
     }
 
 
@@ -115,35 +121,38 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     private fun bindClasses() {
-        val cls = chooseClass()
-        val imports = mutableListOf<String>()
-        for (file in filesDTOs) {
-            if (file.filePackage == cls.classPackage) {
-                imports.addAll(file.imports)
-            }
-        }
-        val classBinder = ClassBinder(cls)
-        classBinder.bind(imports, false)
+//        val cls = chooseClass()
+//        val imports = mutableListOf<String>()
+//        for (file in filesDTOs) {
+//            if (file.filePackage == cls.classPackage) {
+//                imports.addAll(file.imports)
+//            }
+//        }
+//        val classBinder = ClassBinder(cls)
+//        classBinder.bind(imports, false)
     }
 
     fun bindAllClasses() {
-//        filesDTOs.forEach { fileDTO ->
-//            val imports = fileDTO.imports
-//            fileDTO.classes.forEach { classDTO ->
-//                val classBinder = ClassBinder(classDTO)
-//                classBinder.bind(imports, false)
-//            }
-//        }
-        val numberOfFiles = filesDTOs.size
-        var progress = 0
-        println("Binding classes...")
-        filesDTOs.forEach() {
-            val fileBinder = FileBinder(it)
+//        FileController.storeAllFilesOnDisk()
+//        FileController.loadFilesFromDisk()
+
+        val allFiles = FileController.getFileNames()
+        for (fileName in allFiles) {
+            val fileBinder = FileBinder(FileController.getFileFromCache(fileName))
             fileBinder.bind()
-            printProgressBar(progress+1, numberOfFiles)
-            progress++
         }
-        println("\nDone binding classes")
+
+        return
+//        val numberOfFiles = filesDTOs.size
+//        var progress = 0
+//        println("Binding classes...")
+//        filesDTOs.forEach() {
+//            val fileBinder = FileBinder(it)
+//            fileBinder.bind()
+//            printProgressBar(progress+1, numberOfFiles)
+//            progress++
+//        }
+//        println("\nDone binding classes")
     }
 
     private fun chooseClass(): ClassDTO {
@@ -195,15 +204,16 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
                     it.setImports(fileDTO.imports)
                     it.setImportAliases(fileDTO.importAliases)
                 }
-                filesDTOs.add(fileDTO)
+                //filesDTOs.add(fileDTO)
                 FileController.addFileDTO(fileDTO)
-
             } catch (e : Exception) {
                 logger.error("Exception at parsing file: {$filePath}. With message: {$e} stack trace:")
                 e.printStackTrace()
             }
             printProgressBar(i+1, total)
         }
+        FileController.storeAllFilesOnDisk()
+        FileController.clean()
         println("\nDone parsing files")
     }
 
