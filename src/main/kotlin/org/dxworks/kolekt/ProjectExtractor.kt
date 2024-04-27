@@ -40,6 +40,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     fun parseAndSaveToDisk(customCachePlace: String) {
+        FileController.clean()
         val filePaths = readPathToFiles(pathToProject)
         FileController.setPathOnDisk(customCachePlace)
         parseFiles(filePaths)
@@ -218,8 +219,6 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
             }
             printProgressBar(i+1, total)
         }
-        FileController.storeAllFilesOnDisk()
-        FileController.clean()
         println("\nDone parsing files")
     }
 

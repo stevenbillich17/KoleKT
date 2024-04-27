@@ -25,8 +25,6 @@ data class MethodDTO(val methodName: String) {
     private var parentClassFQN: String? = null
     private var parentFileSavedName: String? = null
 
-    @Transient
-    private var methodReturnTypeClassDTO : ClassDTO? = null
 
     @Transient
     private val logger = LoggerFactory.getLogger("ClassDTO@$methodName")
@@ -121,18 +119,6 @@ data class MethodDTO(val methodName: String) {
         } catch (e: IllegalArgumentException) {
             logger.error("Modifier $modifierString not found")
         }
-    }
-
-    fun setMethodReturnTypeClassDTO(classDTO: ClassDTO) {
-        this.methodReturnTypeClassDTO = classDTO
-    }
-
-    fun getMethodReturnTypeClassDTO() : ClassDTO? {
-        return methodReturnTypeClassDTO
-    }
-
-    fun isBasicReturnType() : Boolean {
-        return ClassTypesUtils.isBasicType(methodReturnType)
     }
 
     fun increaseCyclomaticComplexity() {

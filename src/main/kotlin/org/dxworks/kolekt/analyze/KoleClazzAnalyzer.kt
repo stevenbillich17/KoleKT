@@ -17,6 +17,7 @@ object KoleClazzAnalyzer {
         CINTMetricCalculator(),
         CDISPMetricCalculator(),
         BOvRMetricCalculator(),
+        WOCMetricCalculator(),
     )
 
     fun analyze(classFQN: String, setInClass: Boolean = false): JsonObject {

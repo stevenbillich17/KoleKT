@@ -177,7 +177,6 @@ class FileBinder(private val fileDTO: FileDTO) {
     ) {
         val parentClassDTO = FileController.getClass(methodThatWasCalled.getParentClassFQN())
         val parentFileDTO = FileController.getFile(methodThatWasCalled.getParentFileSavedName())
-        methodCall.setMethodThatIsCalled(methodThatWasCalled)
         methodCall.setClassThatIsCalled(parentClassDTO)
         methodCall.setFileThatIsCalled(parentFileDTO)
     }
