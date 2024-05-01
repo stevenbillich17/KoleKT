@@ -1,4 +1,4 @@
-package runnables
+package runnables.names
 
 import org.dxworks.kolekt.ProjectExtractor
 import org.dxworks.kolekt.details.FileController
