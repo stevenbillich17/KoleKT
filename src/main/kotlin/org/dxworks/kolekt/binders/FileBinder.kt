@@ -11,6 +11,7 @@ class FileBinder(private val fileDTO: FileDTO) {
 
 
     fun bind() {
+        bindMethodAndAttributesToFileAndClass(fileDTO)
         for (classDTO in fileDTO.classes) {
             bindFieldsForClass(classDTO)
             bindMethodsForClass(classDTO)
@@ -18,6 +19,27 @@ class FileBinder(private val fileDTO: FileDTO) {
             bindInheritance(classDTO)
         }
         bindFileFunctions(fileDTO)
+    }
+
+    private fun bindMethodAndAttributesToFileAndClass(fileDTO: FileDTO) {
+        // this method is needed due to deserialization and transient fields
+        for (classDTO in fileDTO.classes) {
+            for (constructorDTO in classDTO.getConstructors()) {
+                constructorDTO.setParentFile(fileDTO)
+                constructorDTO.setParentClass(classDTO)
+            }
+            for (methodDTO in classDTO.classMethods) {
+                methodDTO.setParentFile(fileDTO)
+                methodDTO.setParentClass(classDTO)
+            }
+            for (attributeDTO in classDTO.classFields) {
+                attributeDTO.setFileDTO(fileDTO)
+                attributeDTO.setClassDTO(classDTO)
+            }
+        }
+        for (functionDTO in fileDTO.functions) {
+            functionDTO.setParentFile(fileDTO)
+        }
     }
 
     private fun bindInheritance(classDTO: ClassDTO) {
@@ -85,11 +107,13 @@ class FileBinder(private val fileDTO: FileDTO) {
     }
 
     private fun findAndSetMethodLocalVariablesTypes(methodDTO: MethodDTO) {
+        val parentClassDTO = FileController.getClass(methodDTO.getParentClassFQN())
+        val parentFileDTO = FileController.getFile(methodDTO.getParentFileSavedName())
         findAndSetAttributesTypes(
             methodDTO.methodLocalVariables,
             methodDTO,
-            methodDTO.getParenClassDTO(),
-            methodDTO.getParentFileDTO()!!
+            parentClassDTO,
+            parentFileDTO!!
         )
         logger.debug(
             "Method {} has local variables types {}",
@@ -98,11 +122,13 @@ class FileBinder(private val fileDTO: FileDTO) {
     }
 
     private fun findAndSetMethodParametersTypes(methodDTO: MethodDTO) {
+        val parentClassDTO = FileController.getClass(methodDTO.getParentClassFQN())
+        val parentFileDTO = FileController.getFile(methodDTO.getParentFileSavedName())
         findAndSetAttributesTypes(
             methodDTO.methodParameters,
             methodDTO,
-            methodDTO.getParenClassDTO(),
-            methodDTO.getParentFileDTO()!!
+            parentClassDTO,
+            parentFileDTO!!
         )
         logger.debug(
             "Method {} has parameters types {}",
@@ -149,9 +175,10 @@ class FileBinder(private val fileDTO: FileDTO) {
         methodCall: MethodCallDTO,
         methodThatWasCalled: MethodDTO
     ) {
-        methodCall.setMethodThatIsCalled(methodThatWasCalled)
-        methodCall.setClassThatIsCalled(methodThatWasCalled.getParenClassDTO())
-        methodCall.setFileThatIsCalled(methodThatWasCalled.getParentFileDTO())
+        val parentClassDTO = FileController.getClass(methodThatWasCalled.getParentClassFQN())
+        val parentFileDTO = FileController.getFile(methodThatWasCalled.getParentFileSavedName())
+        methodCall.setClassThatIsCalled(parentClassDTO)
+        methodCall.setFileThatIsCalled(parentFileDTO)
     }
 
     private fun setReferencesInsideCalledMethod(
@@ -159,7 +186,8 @@ class FileBinder(private val fileDTO: FileDTO) {
         methodThatWasCalled: MethodDTO,
         sourceMethodDTO: MethodDTO?
     ) {
-        if (sourceClassDTO != null && sourceClassDTO != methodThatWasCalled.getParenClassDTO()) {
+        val parentClassDTO = FileController.getClass(methodThatWasCalled.getParentClassFQN())
+        if (sourceClassDTO != null && sourceClassDTO != parentClassDTO) {
             methodThatWasCalled.addClassThatCallsThisMethod(sourceClassDTO.getFQN())
             if (sourceMethodDTO != null) {
                 methodThatWasCalled.addMethodThatCallsThisMethod(sourceClassDTO.getFQN() + "@" + sourceMethodDTO.methodName)
@@ -217,11 +245,13 @@ class FileBinder(private val fileDTO: FileDTO) {
             val accessedAttributeDTO =
                 findAccessedAttribute(attribute.attributeAccessDTO!!, methodDTO, classDTO, fileDTO)
             if (accessedAttributeDTO != null) {
+                val accessedAttributeClassDTO = FileController.getClass(accessedAttributeDTO.getClassFQN())
+                val accessedAttributeFileDTO = FileController.getFile(accessedAttributeDTO.getFileSavedName())
                 type = findAttributeType(
                     accessedAttributeDTO,
                     null,
-                    accessedAttributeDTO.getClassDTO(),
-                    accessedAttributeDTO.getFileDTO()!!
+                    accessedAttributeClassDTO,
+                    accessedAttributeFileDTO!!
                 )
             }
         } else {
@@ -243,13 +273,15 @@ class FileBinder(private val fileDTO: FileDTO) {
             return methodReturnType
         }
 
-        if (methodDTO.getParentFileDTO() == null) {
+        if (methodDTO.getParentFileSavedName() == null) {
             throw RuntimeException("Parent file not found for method ${methodDTO.methodName}")
         }
+        val parentClassDTO = FileController.getFile(methodDTO.getParentFileSavedName())
+        val parentFileDTO = FileController.getFile(methodDTO.getParentFileSavedName())
         val methodReturnTypeFQN = findFullyQualifiedNameForClass(
             methodReturnType,
-            methodDTO.getParenClassDTO()?.classPackage,
-            methodDTO.getParentFileDTO()!!
+            parentClassDTO?.filePackage,
+            parentFileDTO!!
         )
         if (methodReturnTypeFQN != null) {
             return methodReturnTypeFQN

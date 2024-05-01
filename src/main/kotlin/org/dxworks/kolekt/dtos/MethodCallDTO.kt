@@ -9,48 +9,20 @@ data class MethodCallDTO(val methodName: String, val parameters: List<String>) {
     private var classThatIsCalled : String? = null
     private var fileThatIsCalled : String? = null
 
-    @Transient
-    private var fileThatIsCalledDTO : FileDTO? = null
-    @Transient
-    private var classThatIsCalledDTO : ClassDTO? = null
-    @Transient
-    private var methodThatIsCalledDTO : MethodDTO? = null
-
-
     fun addReference(referenceName: String) {
         this.referenceName = referenceName
-    }
-
-    fun setMethodThatIsCalled(methodThatIsCalled: MethodDTO?) {
-        if (methodThatIsCalled != null) {
-            this.methodThatIsCalledDTO = methodThatIsCalled
-        }
     }
 
     fun setClassThatIsCalled(classThatIsCalled: ClassDTO?) {
         if (classThatIsCalled != null) {
             this.classThatIsCalled = classThatIsCalled.getFQN()
-            this.classThatIsCalledDTO = classThatIsCalled
         }
     }
 
     fun setFileThatIsCalled(fileThatIsCalled: FileDTO?) {
         if (fileThatIsCalled != null) {
-            this.fileThatIsCalled = fileThatIsCalled.filePath
-            this.fileThatIsCalledDTO = fileThatIsCalled
+            this.fileThatIsCalled = fileThatIsCalled.getFileSavedName()
         }
-    }
-
-    fun getFileThatIsCalledDTO(): FileDTO? {
-        return fileThatIsCalledDTO
-    }
-
-    fun getClassThatIsCalledDTO(): ClassDTO? {
-        return classThatIsCalledDTO
-    }
-
-    fun getMethodThatIsCalledDTO(): MethodDTO? {
-        return methodThatIsCalledDTO
     }
 
 

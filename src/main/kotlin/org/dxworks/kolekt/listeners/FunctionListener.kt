@@ -24,10 +24,10 @@ class FunctionListener : KotlinParserBaseListener() {
         logger.trace("Function declaration: ${ctx.simpleIdentifier().text}")
         methodDTO = MethodDTO(ctx.simpleIdentifier().text)
         if (classDTO != null) {
-            methodDTO!!.setParentClassDTO(classDTO!!)
+            methodDTO!!.setParentClass(classDTO!!)
         }
         if (fileDTO != null) {
-            methodDTO!!.setParentFileDTO(fileDTO!!)
+            methodDTO!!.setParentFile(fileDTO!!)
         }
     }
 

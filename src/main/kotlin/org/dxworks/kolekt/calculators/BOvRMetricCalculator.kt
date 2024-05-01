@@ -13,6 +13,9 @@ class BOvRMetricCalculator : MetricsCalculator {
 
     override fun calculateMetrics(classDTO: ClassDTO, setInClass: Boolean): JsonObject {
         var numberOfMethodsOverride = 0
+        if (classDTO.classMethods.size == 0) return buildJsonObject {
+            put("BOvR", 0)
+        }
         for (method in classDTO.classMethods) {
             if (checkIfOverrideAnnotated(method.methodAnnotations) || checkIfOverrideModified(method.methodModifiers)) {
                 numberOfMethodsOverride++
