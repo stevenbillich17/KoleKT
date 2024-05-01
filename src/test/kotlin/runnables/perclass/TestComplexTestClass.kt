@@ -31,6 +31,104 @@ class TestComplexTestClass {
         testFileNameAndPackage()
         testFields()
         testFieldsSetByMethodCalls()
+        testMethodsFromTestClass()
+    }
+
+    private fun testMethodsFromTestClass() {
+        testCallOutsideFunctionMethod()
+        testTestReturnMethod()
+        testFun2Method()
+        testFunctionWithIncreasedComplexityMethod()
+    }
+
+    private fun testFunctionWithIncreasedComplexityMethod() {
+        val fileDTO =
+            FileController.getFile("org.dxworks.kolekt.testpackage.TestFile.kt") ?: throw Exception("File not found")
+        val testClass = fileDTO.classes.find { it.getFQN() == "org.dxworks.kolekt.testpackage.TestClass" }
+            ?: throw Exception("Class not found")
+        val functionWithIncreasedComplexityMethod =
+            testClass.classMethods.find { it.methodName == "functionWithIncreasedComplexity" }
+                ?: throw Exception("Method not found")
+        assertEquals(false, functionWithIncreasedComplexityMethod.isConstructor())
+        // test there is a MalwareWriter method call
+        val malwareWriterMethodCall = functionWithIncreasedComplexityMethod.methodCalls.find { it.methodName == "MalwareWriter" }
+            ?: throw Exception("Method call not found")
+        assertEquals("org.dxworks.kolekt.testpackage.malware.MalwareWriter", malwareWriterMethodCall.getClassThatIsCalled())
+        // test that there is a writeMalwareWithParameters method call
+        val writeMalwareWithParametersMethodCall = functionWithIncreasedComplexityMethod.methodCalls.find { it.methodName == "writeMalwareWithParameters" }
+            ?: throw Exception("Method call not found")
+        assertEquals("org.dxworks.kolekt.testpackage.malware.MalwareWriter", writeMalwareWithParametersMethodCall.getClassThatIsCalled())
+        // test the cylomatic complexity to be 7
+        assertEquals(7, functionWithIncreasedComplexityMethod.getCyclomaticComplexity())
+    }
+
+    private fun testFun2Method() {
+        val fileDTO =
+            FileController.getFile("org.dxworks.kolekt.testpackage.TestFile.kt") ?: throw Exception("File not found")
+        val testClass = fileDTO.classes.find { it.getFQN() == "org.dxworks.kolekt.testpackage.TestClass" }
+            ?: throw Exception("Class not found")
+        val fun2Method = testClass.classMethods.find { it.methodName == "fun2" }
+            ?: throw Exception("Method not found")
+        assertEquals(false, fun2Method.isConstructor())
+        // test that no other methods call this method
+        assertEquals(0, fun2Method.getMethodsThatCallThisMethod().size)
+        assertEquals(0, fun2Method.getClassesThatCallThisMethod().size)
+        // test if the list of annotations has a no element (AnnotationDTO)
+        assertEquals(0, fun2Method.methodAnnotations.size)
+        // check paratemer to be of type String and Double
+        assertEquals(2, fun2Method.methodParameters.size)
+        assertEquals("String", fun2Method.methodParameters[0].type)
+        assertEquals("Double", fun2Method.methodParameters[1].type)
+        // test return type to be of type Void
+        assertEquals("Void", fun2Method.getMethodReturnType())
+        // test cyclomatic complexity to be 1
+        assertEquals(1, fun2Method.getCyclomaticComplexity())
+        // test number of method calls to be 6
+        assertEquals(6, fun2Method.methodCalls.size)
+        // get testReturn() method call
+        val testReturnMethodCall = fun2Method.methodCalls.find { it.methodName == "testReturn" }
+            ?: throw Exception("Method call not found")
+        assertEquals("org.dxworks.kolekt.testpackage.TestClass", testReturnMethodCall.getClassThatIsCalled())
+    }
+
+    private fun testTestReturnMethod() {
+        val fileDTO =
+            FileController.getFile("org.dxworks.kolekt.testpackage.TestFile.kt") ?: throw Exception("File not found")
+        val testClass = fileDTO.classes.find { it.getFQN() == "org.dxworks.kolekt.testpackage.TestClass" }
+            ?: throw Exception("Class not found")
+        val testReturnMethod = testClass.classMethods.find { it.methodName == "testReturn" }
+            ?: throw Exception("Method not found")
+        assertEquals(false, testReturnMethod.isConstructor())
+        // test that no other methods call this method
+        assertEquals(0, testReturnMethod.getMethodsThatCallThisMethod().size)
+        assertEquals(0, testReturnMethod.getClassesThatCallThisMethod().size)
+        // test if the list of annotations has a single element (AnnotationDTO)
+        assertEquals(0, testReturnMethod.methodAnnotations.size)
+        // check paratemer to be of type String
+        assertEquals(0, testReturnMethod.methodParameters.size)
+        // test return type to be of type MalwareWriter
+        assertEquals("org.dxworks.kolekt.testpackage.malware.MalwareWriter", testReturnMethod.getMethodReturnType())
+        // test cyclomatic complexity to be 1
+        assertEquals(1, testReturnMethod.getCyclomaticComplexity())
+    }
+
+    private fun testCallOutsideFunctionMethod() {
+        val fileDTO =
+            FileController.getFile("org.dxworks.kolekt.testpackage.TestFile.kt") ?: throw Exception("File not found")
+        val testClass = fileDTO.classes.find { it.getFQN() == "org.dxworks.kolekt.testpackage.TestClass" }
+            ?: throw Exception("Class not found")
+        val callOutsideFunctionMethod = testClass.classMethods.find { it.methodName == "callOutsideFunction" }
+            ?: throw Exception("Method not found")
+        assertEquals(false, callOutsideFunctionMethod.isConstructor())
+        // test that no other methods call this method
+        assertEquals(0, callOutsideFunctionMethod.getMethodsThatCallThisMethod().size)
+        assertEquals(0, callOutsideFunctionMethod.getClassesThatCallThisMethod().size)
+        // test if the list of annotations has a single element (AnnotationDTO)
+        assertEquals(1, callOutsideFunctionMethod.methodAnnotations.size)
+        assertEquals("Deprecated", callOutsideFunctionMethod.methodAnnotations[0].annotationName)
+        // check paratemer to be of type String
+        assertEquals(1, callOutsideFunctionMethod.methodParameters.size)
+        assertEquals("String", callOutsideFunctionMethod.methodParameters[0].type)
     }
 
     private fun testFieldsSetByMethodCalls() {

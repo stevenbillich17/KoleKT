@@ -66,12 +66,12 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
             option = readLine()?.toInt() ?: 0
             when (option) {
                 1 -> enterClassesDtos()
-                2 -> bindClasses()
-                3 -> bindAllClasses()
-                4 -> computeSpecialMetrics()
-                5 -> computeBasicMetrics()
-                6 -> exportClasses()
-                7 -> exportAllClasses()
+                2 -> bindAllClasses()
+                3 -> computeSpecialMetrics()
+                4 -> computeBasicMetrics()
+                5 -> exportClasses()
+                6 -> exportAllFiles()
+                7 -> enterFileDtos()
                 8 ->  {
                     println("Exiting")
                     return
@@ -79,6 +79,21 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
                 else -> println("Invalid option")
             }
         }
+    }
+
+    private fun enterFileDtos() {
+        val allFiles = FileController.getFileNames()
+        val optionsMap = mutableMapOf<Int, String>()
+        var option = 0
+        allFiles.forEach { fileName ->
+            optionsMap[option] = fileName
+            println("$option -> $fileName")
+            option++
+        }
+        println("Choose a file")
+        option = readLine()?.toInt() ?: 0
+        val fileDTO = FileController.getFileFromCache(optionsMap[option] ?: "")
+        println(fileDTO)
     }
 
     private fun computeBasicMetrics() {
@@ -91,17 +106,19 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
     }
 
-    private fun exportAllClasses() {
+    private fun exportAllFiles() {
         if (pathToGenerated == null) {
             println("Path to generated not set")
             return
         }
-        // store all the classes from all the files
-//        filesDTOs.forEach { fileDTO ->
-//            fileDTO.classes.forEach { classDTO ->
-//                File( "${pathToGenerated}\\${classDTO.getFQN()}.json").writeText(KoleSerializer.serialize(classDTO))
-//            }
-//        }
+        // store all the classes from all the files without binding them
+        val allFiles = FileController.getFileNames()
+        allFiles.forEach { fileName ->
+            val fileDTO = FileController.getFileFromCache(fileName)
+            val file = File("$pathToGenerated\\${fileDTO.filePackage}.${fileDTO.fileName}.json")
+            file.writeText(KoleSerializer.serialize(fileDTO))
+        }
+        println("Files exported successfully at $pathToGenerated")
     }
 
 
@@ -114,12 +131,12 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         println("")
         println("Menu:")
         println("1. Print classes Dtos")
-        println("2. Bind classes Dtos")
-        println("3. Bind all classes Dtos")
-        println("4. Compute special metrics")
-        println("5. Compute basic metrics")
-        println("6. Serialize classes Dtos")
-        println("7. Serialize all classes Dtos")
+        println("2. Bind all classes Dtos")
+        println("3. Compute special metrics")
+        println("4. Compute basic metrics")
+        println("5. Serialize classes Dtos")
+        println("6. Serialize files and store to disk")
+        println("7. Print a file")
         println("8. Exit")
     }
 
@@ -127,53 +144,30 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         println(chooseClass())
     }
 
-    private fun bindClasses() {
-//        val cls = chooseClass()
-//        val imports = mutableListOf<String>()
-//        for (file in filesDTOs) {
-//            if (file.filePackage == cls.classPackage) {
-//                imports.addAll(file.imports)
-//            }
-//        }
-//        val classBinder = ClassBinder(cls)
-//        classBinder.bind(imports, false)
-    }
-
     fun bindAllClasses() {
-//        FileController.storeAllFilesOnDisk()
-//        FileController.loadFilesFromDisk()
-
         val allFiles = FileController.getFileNames()
         for (fileName in allFiles) {
             val fileBinder = FileBinder(FileController.getFileFromCache(fileName))
             fileBinder.bind()
         }
-
-        return
-//        val numberOfFiles = filesDTOs.size
-//        var progress = 0
-//        println("Binding classes...")
-//        filesDTOs.forEach() {
-//            val fileBinder = FileBinder(it)
-//            fileBinder.bind()
-//            printProgressBar(progress+1, numberOfFiles)
-//            progress++
-//        }
-//        println("\nDone binding classes")
     }
 
     private fun chooseClass(): ClassDTO {
         val optionsMap = mutableMapOf<Int, String>()
         var option = 0
-        DictionariesController.getFQNClassesDictionary().forEach { (key,) ->
-            optionsMap[option] = key
-            println("$option. $key")
-            option++
+        val allFiles = FileController.getFileNames()
+        allFiles.forEach { fileName ->
+            val fileDTO = FileController.getFileFromCache(fileName)
+            fileDTO.classes.forEach { classDTO ->
+                optionsMap[option] = classDTO.getFQN()
+                println("$option. ${classDTO.getFQN()}")
+                option++
+            }
         }
         println("Choose a class")
         option = readLine()?.toInt() ?: 0
         val classFQN = optionsMap[option] ?: ""
-        return DictionariesController.findClassAfterFQN(classFQN, true)
+        return FileController.findClassInFiles(classFQN) ?: throw Exception("Class not found")
     }
 
     private fun printDetailsFromFiles() {
