@@ -7,7 +7,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class ReturnsCalculator {
-    val logger: Logger = LoggerFactory.getLogger(ExternalCallsCalculator::class.java)
+    val logger: Logger = LoggerFactory.getLogger(ReturnsCalculator::class.java)
 
     fun computeReturns(sourceFileDTO: FileDTO, targetFileDTO: FileDTO): Int {
         logger.debug("Computing returns")
