@@ -1,8 +1,6 @@
 package org.dxworks.kolekt.calculators.relations
-import org.dxworks.kolekt.dtos.AttributeDTO
-import org.dxworks.kolekt.dtos.FileDTO
-import org.dxworks.kolekt.dtos.MethodCallDTO
-import org.dxworks.kolekt.dtos.MethodDTO
+import org.dxworks.kolekt.calculators.utils.CommonFunctions
+import org.dxworks.kolekt.dtos.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -54,8 +52,27 @@ class ExternalCallsCalculator {
     }
 
     private fun checkTheMethodCall(methodCall: MethodCallDTO, targetFileSavedName: String): Boolean {
+        logger.trace("Checking method call: ${methodCall.methodName} to $targetFileSavedName")
         val matchFile =  methodCall.getFileThatIsCalled() == targetFileSavedName
-        return matchFile // todo: should also check if the method is accessor
+        return matchFile && !isAccessor(CommonFunctions.getCalledClass(methodCall), methodCall.methodName)
+    }
+
+    private fun isAccessor(calledClass: ClassDTO?, methodName: String): Boolean {
+        if (calledClass == null) {
+            return false
+        }
+        for (method in calledClass.classMethods) {
+            if (method.methodName == methodName) {
+                val startSpecific = methodName.startsWith("get") || methodName.startsWith("set")
+                val ccIsOne = method.getCyclomaticComplexity() == 1
+                val noParameters = method.methodParameters.isEmpty()
+                val noMethodCalls = method.methodCalls.isEmpty()
+                val noLocalVariables = method.methodLocalVariables.isEmpty()
+                val noAnnotations = method.methodAnnotations.isEmpty()
+                return startSpecific && ccIsOne && noParameters && noMethodCalls && noLocalVariables && noAnnotations
+            }
+        }
+        return false
     }
 
 }

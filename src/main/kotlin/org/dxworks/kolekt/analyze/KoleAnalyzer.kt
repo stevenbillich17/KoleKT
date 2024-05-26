@@ -8,7 +8,7 @@ import org.dxworks.kolekt.calculators.relations.*
 import org.dxworks.kolekt.details.FileController
 import org.dxworks.kolekt.dtos.FileDTO
 
-class KoleAnalyzer {
+object KoleAnalyzer {
     val externalCallsCalculator = ExternalCallsCalculator()
     val returnsCalculator = ReturnsCalculator()
     val externalDataCalculator = ExternalDataCalculator()

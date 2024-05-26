@@ -50,6 +50,7 @@ class ExternalDataCalculator {
         var numberOfAccesses = 0
         for (attributeDTO in attributes) {
             if (attributeDTO.isSetByMethodCall) {
+                logger.trace("Checking method call for ${attributeDTO.name}")
                 val methodCall = attributeDTO.methodCallDTO ?: continue
                 if (checkIfTheMethodCallIsForGetter(methodCall)) {
                     logger.trace("Found access to ${methodCall.methodName}")
@@ -57,6 +58,7 @@ class ExternalDataCalculator {
                 }
             }
             if (attributeDTO.isSetByAttributeAccess) {
+                logger.trace("Checking attribute access for ${attributeDTO.name}")
                 val attributeAccessDTO =
                     attributeDTO.attributeAccessDTO ?: throw IllegalArgumentException("Attribute access not found")
                 if (checkTheAttributeAccess(attributeAccessDTO)) {
@@ -74,6 +76,7 @@ class ExternalDataCalculator {
 
     private fun checkTheAttributeAccess(attributeAccessDTO: AttributeAccessDTO): Boolean {
         val attributeClass = attributeAccessDTO.getAttributeClassFQN()
+        logger.trace("Attribute class: $attributeClass")
         if (CommonFunctions.isTheFieldProtected(attributeClass, attributeAccessDTO.attributeName)) {
             return false
         }

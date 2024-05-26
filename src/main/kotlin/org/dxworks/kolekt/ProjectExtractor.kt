@@ -4,6 +4,7 @@ import kotlinx.serialization.json.JsonObject
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.analyze.KoleAnalyzer
 import org.dxworks.kolekt.analyze.KoleClazzAnalyzer
 import org.dxworks.kolekt.analyze.KoleGeneralAnalyzer
 import org.dxworks.kolekt.binders.FileBinder
@@ -110,7 +111,23 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     private fun computeSpecialMetrics() {
-
+        val allFiles = FileController.getFileNames()
+        val optionsMap = mutableMapOf<Int, String>()
+        var option = 0
+        allFiles.forEach { fileName ->
+            optionsMap[option] = fileName
+            println("$option -> $fileName")
+            option++
+        }
+        println("Choose source file")
+        option = readLine()?.toInt() ?: 0
+        val fileDTO = FileController.getFileFromCache(optionsMap[option] ?: "")
+        println("Choose target file")
+        option = readLine()?.toInt() ?: 0
+        val targetFileDTO = FileController.getFileFromCache(optionsMap[option] ?: "")
+        val listOfMetrics = listOf("extCalls", "returns", "extData", "extDataStrict", "declarations")
+        val json = KoleAnalyzer.computeMetric(listOfMetrics, fileDTO.getFileSavedName(), targetFileDTO.getFileSavedName(), false)
+        println(json)
     }
 
     private fun exportAllFiles() {
