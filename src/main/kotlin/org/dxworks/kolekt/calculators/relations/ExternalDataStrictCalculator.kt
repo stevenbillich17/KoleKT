@@ -95,7 +95,12 @@ class ExternalDataStrictCalculator {
         if (attributeDTO == null) {
             return false
         }
-        val isAttributeInternal = FileController.getClass(attributeDTO.type) != null
+        var isAttributeInternal: Boolean
+        try {
+            isAttributeInternal = FileController.getClass(attributeDTO.type) != null
+        } catch (exception: java.lang.IllegalArgumentException) {
+            isAttributeInternal = false
+        }
         return classesFromTarget.contains(attributeClass) && isAttributeInternal
     }
 }

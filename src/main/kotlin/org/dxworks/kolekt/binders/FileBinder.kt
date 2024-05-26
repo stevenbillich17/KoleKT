@@ -246,6 +246,9 @@ class FileBinder(private val fileDTO: FileDTO) {
                 findAccessedAttribute(attribute.attributeAccessDTO!!, methodDTO, classDTO, fileDTO)
             if (accessedAttributeDTO != null) {
                 val accessedAttributeClassDTO = FileController.getClass(accessedAttributeDTO.getClassFQN())
+                if (accessedAttributeClassDTO != null) {
+                    attribute.attributeAccessDTO!!.setAttributeClassDTO(accessedAttributeClassDTO)
+                }
                 val accessedAttributeFileDTO = FileController.getFile(accessedAttributeDTO.getFileSavedName())
                 type = findAttributeType(
                     accessedAttributeDTO,
