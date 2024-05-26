@@ -1,9 +1,11 @@
 package org.dxworks.kolekt
 
+import kotlinx.serialization.json.JsonObject
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.dxworks.kolekt.analyze.KoleClazzAnalyzer
+import org.dxworks.kolekt.analyze.KoleGeneralAnalyzer
 import org.dxworks.kolekt.binders.FileBinder
 import org.dxworks.kolekt.details.DictionariesController
 import org.dxworks.kolekt.details.FileController
@@ -61,7 +63,7 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
     fun printInteractiveInferface() {
         var option = 0
-        while (option != 8) {
+        while (option != 9) {
             showMenu()
             option = readLine()?.toInt() ?: 0
             when (option) {
@@ -72,13 +74,18 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
                 5 -> exportClasses()
                 6 -> exportAllFiles()
                 7 -> enterFileDtos()
-                8 ->  {
+                8 -> getGeneralStats()
+                9 ->  {
                     println("Exiting")
                     return
                 }
                 else -> println("Invalid option")
             }
         }
+    }
+
+    private fun getGeneralStats() {
+        println(KoleGeneralAnalyzer.getStatistics())
     }
 
     private fun enterFileDtos() {
@@ -137,7 +144,8 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         println("5. Serialize classes Dtos")
         println("6. Serialize files and store to disk")
         println("7. Print a file")
-        println("8. Exit")
+        println("8. Get general stats")
+        println("9. Exit")
     }
 
     fun enterClassesDtos() {

@@ -20,6 +20,10 @@ object FileController {
         classesDictionaryCache = FQNClassesDictionary()
     }
 
+    fun getNamesOfAllTheFiles(): List<String> {
+        return allFiles.keys.toList()
+    }
+
     fun setPathOnDisk(path: String?) {
         pathOnDisk = path
     }

@@ -11,7 +11,7 @@ class DeclarationsCalculator {
     val logger: Logger = LoggerFactory.getLogger(DeclarationsCalculator::class.java)
     var setOfTypesDefinedInTarget: Set<String> = emptySet()
 
-    fun computeReturns(sourceFileDTO: FileDTO, targetFileDTO: FileDTO): Int {
+    fun computeDeclarations(sourceFileDTO: FileDTO, targetFileDTO: FileDTO): Int {
         logger.debug("Computing declarations")
         setTypesFromTarget(targetFileDTO)
         var numberOfFields = 0
