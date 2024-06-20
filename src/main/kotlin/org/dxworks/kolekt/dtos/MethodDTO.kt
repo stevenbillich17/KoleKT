@@ -22,16 +22,9 @@ data class MethodDTO(val methodName: String) {
     private var classesThatCallThisMethod = mutableSetOf<String>()
     private var methodsThatCallThisMethod = mutableSetOf<String>()
 
-    @Transient
-    private var parentClassDTO : ClassDTO? = null
     private var parentClassFQN: String? = null
+    private var parentFileSavedName: String? = null
 
-    @Transient
-    private var parentFileDTO : FileDTO? = null
-    private var parentFilePath: String? = null
-
-    @Transient
-    private var methodReturnTypeClassDTO : ClassDTO? = null
 
     @Transient
     private val logger = LoggerFactory.getLogger("ClassDTO@$methodName")
@@ -53,22 +46,20 @@ data class MethodDTO(val methodName: String) {
                 "   }"
     }
 
-    fun getParenClassDTO(): ClassDTO? {
-        return parentClassDTO
-    }
-
-    fun setParentClassDTO(classDTO: ClassDTO) {
+    fun setParentClass(classDTO: ClassDTO) {
         this.parentClassFQN = classDTO.getFQN()
-        this.parentClassDTO = classDTO
     }
 
-    fun getParentFileDTO(): FileDTO? {
-        return parentFileDTO
+    fun getParentClassFQN(): String? {
+        return parentClassFQN
     }
 
-    fun setParentFileDTO(fileDTO: FileDTO) {
-        this.parentFilePath = fileDTO.filePath
-        this.parentFileDTO = fileDTO
+    fun setParentFile(fileDTO: FileDTO) {
+        this.parentFileSavedName = fileDTO.filePackage + "." + fileDTO.fileName
+    }
+
+    fun getParentFileSavedName(): String? {
+        return parentFileSavedName
     }
 
     fun setMethodReturnType(methodReturnType: String) {
@@ -128,18 +119,6 @@ data class MethodDTO(val methodName: String) {
         } catch (e: IllegalArgumentException) {
             logger.error("Modifier $modifierString not found")
         }
-    }
-
-    fun setMethodReturnTypeClassDTO(classDTO: ClassDTO) {
-        this.methodReturnTypeClassDTO = classDTO
-    }
-
-    fun getMethodReturnTypeClassDTO() : ClassDTO? {
-        return methodReturnTypeClassDTO
-    }
-
-    fun isBasicReturnType() : Boolean {
-        return ClassTypesUtils.isBasicType(methodReturnType)
     }
 
     fun increaseCyclomaticComplexity() {

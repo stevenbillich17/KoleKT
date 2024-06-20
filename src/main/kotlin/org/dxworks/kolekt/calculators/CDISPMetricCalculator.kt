@@ -20,7 +20,7 @@ class CDISPMetricCalculator : MetricsCalculator {
         }
 
         for (field in classDTO.classFields) {
-            if (field.isSetByMethodCall && field.methodCallDTO?.getClassThatIsCalledDTO() != null) {
+            if (field.isSetByMethodCall && CommonFunctions.getCalledClass(field.methodCallDTO!!) != null) {
                 setOfClassesThatAreCalled.add(field.methodCallDTO!!.getClassThatIsCalled()!!)
             }
         }

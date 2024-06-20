@@ -11,7 +11,7 @@ object DictionariesController {
 
     fun addClassDTO(classDTO: ClassDTO) {
         classesDictionary.addClassDTO(classDTO)
-        fqnClassesDictionary.addClassDTO(classDTO)
+        //fqnClassesDictionary.addClassDTO(classDTO)
     }
 
     fun findClassesWithSimilarNames(className: String): ArrayList<ClassDTO>? {
@@ -25,8 +25,9 @@ object DictionariesController {
 
     fun findClassesInSamePackage(packageName:  String?): List<ClassDTO> {
         if(packageName == null) return ArrayList()
-        val classes = fqnClassesDictionary.findClassesInsidePackage(packageName)
-        return eliminateSubPackages(classes, packageName)
+        //val classes = fqnClassesDictionary.findClassesInsidePackage(packageName)
+        return ArrayList()
+        //return eliminateSubPackages(classes, packageName)
     }
 
     private fun eliminateSubPackages(classes: List<ClassDTO>, packageName: String): List<ClassDTO> {
@@ -45,7 +46,8 @@ object DictionariesController {
     }
 
     fun getFQNClassesDictionary(): MutableMap<String, ClassDTO> {
-        return fqnClassesDictionary.getDict()
+        return mutableMapOf()
+        //return fqnClassesDictionary.getDict()
     }
 
 }

@@ -29,14 +29,6 @@ class ClassDTO(internal val className: String? = null) {
     private var NOC = 0
 
     @Transient
-    internal val typesFoundInClass = mutableMapOf<String, ClassDTO>()
-
-    @Transient
-    private var superClassDTO: ClassDTO? = null
-    @Transient
-    private val subClassesDTOs = mutableListOf<ClassDTO>()
-
-    @Transient
     private val logger = LoggerFactory.getLogger("ClassDTO@$className")
 
     override fun toString(): String {
@@ -167,16 +159,12 @@ class ClassDTO(internal val className: String? = null) {
     }
 
     fun setSuperClassDTO(classDTO: ClassDTO) {
-        superClassDTO = classDTO
+        superClass = classDTO.getFQN()
     }
 
-    fun getSuperClassDTO(): ClassDTO? {
-        return superClassDTO
-    }
 
     fun addSubClass(classDTO: ClassDTO) {
         subClassesFQNs.add(classDTO.getFQN())
-        subClassesDTOs.add(classDTO)
     }
 
     fun getHIT(): Int {
@@ -201,10 +189,6 @@ class ClassDTO(internal val className: String? = null) {
 
     fun setNOC(noc: Int) {
         NOC = noc
-    }
-
-    fun getSubClassesDTOs(): List<ClassDTO> {
-        return subClassesDTOs
     }
 
     fun getSubClassesFQNs(): List<String> {

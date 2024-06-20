@@ -1,4 +1,4 @@
-package runnables
+package runnables.names
 
 import org.dxworks.kolekt.ProjectExtractor
 import org.dxworks.kolekt.details.FileController
@@ -6,20 +6,50 @@ import org.dxworks.kolekt.dtos.AttributeDTO
 import org.dxworks.kolekt.dtos.ClassDTO
 import org.dxworks.kolekt.dtos.MethodDTO
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
-class TestFullNameResolving {
+class TestFullNameResolvingFromDisk {
     @Test
     fun testFieldDeclaration() {
         val projectExtractor =
-            ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
-        projectExtractor.simpleParse()
-        projectExtractor.bindAllClasses()
+            ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage",
+                "E:\\AA.Faculta\\LICENTA\\A.KoleKT-Generated-for-test\\test-1")
+        projectExtractor.parseAndSaveToDisk("E:\\AA.Faculta\\LICENTA\\A.KoleKT-Generated-for-test\\test-1")
+        projectExtractor.bindFromDisk(10, "E:\\AA.Faculta\\LICENTA\\A.KoleKT-Generated-for-test\\test-1")
         testFullNameResolvingForFields()
         testFullNamesResolvingForMethods()
     }
 
     private fun testFullNamesResolvingForMethods() {
         testFullNameresolvingForTestFilefun2()
+        testFullNameResolvingForTestFileTestReturn()
+        testMalwareWriterCalls()
+    }
+
+    private fun testMalwareWriterCalls() {
+        val malwareWriter = FileController.findClassInFiles("org.dxworks.kolekt.testpackage.malware.MalwareWriter")
+            ?: throw Exception("Class not found")
+        val methodDTO = malwareWriter.classMethods.find { it.methodName == "writeMalwareWithParameters" } ?: throw Exception("Method not found")
+        assert(findParameter(methodDTO, "x").type == "String")
+        assert(findParameter(methodDTO, "y").type == "String")
+        assertEquals(1, methodDTO.methodCalls.size)
+        assertEquals(1, methodDTO.getClassesThatCallThisMethod().size)
+        assertEquals("org.dxworks.kolekt.testpackage.TestClass", methodDTO.getClassesThatCallThisMethod().first())
+        assertEquals(2, methodDTO.getMethodsThatCallThisMethod().size)
+        assert(methodDTO.getMethodsThatCallThisMethod().contains("org.dxworks.kolekt.testpackage.TestClass@fun2"))
+        assert(methodDTO.getMethodsThatCallThisMethod().contains("org.dxworks.kolekt.testpackage.TestClass@functionWithIncreasedComplexity"))
+    }
+
+    private fun testFullNameResolvingForTestFileTestReturn() {
+        val testClass = FileController.findClassInFiles("org.dxworks.kolekt.testpackage.TestClass")
+            ?: throw Exception("Class not found")
+        val methodDTO = testClass.classMethods.find { it.methodName == "testReturn" } ?: throw Exception("Method not found")
+        assert(methodDTO.getMethodReturnType() == "org.dxworks.kolekt.testpackage.malware.MalwareWriter")
+        assert(methodDTO.getParentFileSavedName() == "org.dxworks.kolekt.testpackage.TestFile.kt")
+        assert(!methodDTO.isConstructor())
+        // todo: nu se pun alea din acceasi clasa
+//        assertEquals(1, methodDTO.getClassesThatCallThisMethod().size)
+//        assert(methodDTO.getClassesThatCallThisMethod().contains("org.dxworks.kolekt.testpackage.TestClass"))
     }
 
     private fun testFullNameresolvingForTestFilefun2() {
