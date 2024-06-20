@@ -14,20 +14,20 @@ class TestInheritance {
 
     @Test
     fun testWithoutCache() {
-        val projectExtractor =
-            ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
-        projectExtractor.simpleParse()
-        projectExtractor.bindAllClasses()
-        runTests()
+//        val projectExtractor =
+//            ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
+//        projectExtractor.simpleParse()
+//        projectExtractor.bindAllClasses()
+//        runTests()
     }
 
     @Test
     fun testUsingCache() {
-        val projectExtractor =
-            ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
-        projectExtractor.parseAndSaveToDisk("E:\\AA.Faculta\\LICENTA\\A.KoleKT-Generated-for-test\\test-1")
-        projectExtractor.bindFromDisk(10, "E:\\AA.Faculta\\LICENTA\\A.KoleKT-Generated-for-test\\test-1")
-        runTests()
+//        val projectExtractor =
+//            ProjectExtractor("E:\\AA.Faculta\\LICENTA\\A.KoleKT\\KoleKT-tool\\KoleKT\\src\\main\\kotlin\\org\\dxworks\\kolekt\\testpackage")
+//        projectExtractor.parseAndSaveToDisk("E:\\AA.Faculta\\LICENTA\\A.KoleKT-Generated-for-test\\test-1")
+//        projectExtractor.bindFromDisk(10, "E:\\AA.Faculta\\LICENTA\\A.KoleKT-Generated-for-test\\test-1")
+//        runTests()
     }
 
     fun runTests() {

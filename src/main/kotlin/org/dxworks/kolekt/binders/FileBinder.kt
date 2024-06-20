@@ -236,12 +236,12 @@ class FileBinder(private val fileDTO: FileDTO) {
     ): String? {
         // finding the simple type
         var type: String? = null
-        if (attribute.isSetByMethodCall && isNullOrEmpty(attribute.type)) {
+        if (attribute.isSetByMethodCall && isNullOrEmpty(attribute.type) && attribute.methodCallDTO != null) {
             val calledMethodDTO: MethodDTO? = findMethodCall(attribute.methodCallDTO!!, methodDTO, classDTO, fileDTO)
             if (calledMethodDTO != null) {
                 type = findMethodReturnType(calledMethodDTO)
             }
-        } else if (attribute.isSetByAttributeAccess && isNullOrEmpty(attribute.type)) {
+        } else if (attribute.isSetByAttributeAccess && isNullOrEmpty(attribute.type) && attribute.attributeAccessDTO != null) {
             val accessedAttributeDTO =
                 findAccessedAttribute(attribute.attributeAccessDTO!!, methodDTO, classDTO, fileDTO)
             if (accessedAttributeDTO != null) {

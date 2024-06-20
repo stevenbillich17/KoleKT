@@ -20,7 +20,8 @@ class FileContainer(private var fileDTO: FileDTO? = null) {
 
     private fun loadFromDisk(pathOnDisk: String?): FileDTO {
         if (pathOnDisk == null) {
-            throw IllegalArgumentException("Path on disk is null")
+            logger.warn("Path on disk is null")
+            return FileDTO("", "UNKNOWN")
         }
         val file = File("$pathOnDisk\\${fileSavedName}.json")
         val fileDTOString = file.readText()
@@ -43,7 +44,8 @@ class FileContainer(private var fileDTO: FileDTO? = null) {
 
     fun storeFileOnDisk(pathOnDisk: String) {
         if (fileDTO == null) {
-            throw IllegalArgumentException("FileDTO is null")
+            logger.warn("FileDTO is null")
+            return
         }
         val file = File("$pathOnDisk\\${fileSavedName}.json")
         file.writeText(KoleSerializer.serialize(fileDTO!!))
