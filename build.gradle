@@ -4,8 +4,8 @@ plugins {
     id 'application'
 }
 
-group = 'com.dxworks.stv'
-version = '1.0-SNAPSHOT'
+group = 'com.dxworks'
+version = 'v1.4-TRACE'
 
 repositories {
     mavenCentral()
@@ -30,5 +30,20 @@ kotlin {
 }
 
 application {
-    mainClassName = 'MainKt'
+    mainClass.set("org.dxworks.kolekt.MainKt")
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'org.dxworks.kolekt.MainKt'
+        )
+    }
+
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }

@@ -412,7 +412,12 @@ class FunctionListener : KotlinParserBaseListener() {
         } else {
             // add new call to the last call
             parsingContext.lastCallSuffixMethodCall = MethodCallDTO(parsingContext.calledMethodName, parsingContext.calledMethodParameters)
-            parsingContext. lastCallSuffixMethodCall!!.addReference(parsingContext.referenceName!!)
+            if (parsingContext.referenceName != null) {
+                parsingContext.lastCallSuffixMethodCall!!.addReference(parsingContext.referenceName!!)
+
+            } else {
+                logger.warn("Reference name was not set for method call: ${parsingContext.calledMethodName}")
+            }
             methodDTO!!.methodCalls.add(parsingContext.lastCallSuffixMethodCall!!)
             logger.debug("Adding method call: {}", parsingContext.lastCallSuffixMethodCall)
         }

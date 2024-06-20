@@ -1,9 +1,12 @@
 package org.dxworks.kolekt
 
+import kotlinx.serialization.json.JsonObject
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.dxworks.kolekt.analyze.KoleAnalyzer
 import org.dxworks.kolekt.analyze.KoleClazzAnalyzer
+import org.dxworks.kolekt.analyze.KoleGeneralAnalyzer
 import org.dxworks.kolekt.binders.FileBinder
 import org.dxworks.kolekt.details.DictionariesController
 import org.dxworks.kolekt.details.FileController
@@ -30,6 +33,41 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         FileController.setPathOnDisk(pathToGenerated)
     }
 
+    fun computeSpecialMetricsFor(sourceFileName: String, targetFileName: String) {
+        val sourceFileDTO = FileController.getFileFromCache(sourceFileName)
+        val targetFileDTO = FileController.getFileFromCache(targetFileName)
+        val listOfMetrics = listOf("extCalls", "returns", "extData", "extDataStrict", "declarations")
+        val json = KoleAnalyzer.computeMetric(listOfMetrics, sourceFileDTO.getFileSavedName(), targetFileDTO.getFileSavedName(), false)
+        println(json)
+    }
+
+    fun storeFilesOnDisk() {
+        FileController.storeAllFilesOnDisk()
+    }
+
+    fun computeMetricsForAllClasses(pathToMetricsOnDisk: String?) {
+        val allFiles = FileController.getFileNames()
+        allFiles.forEach { fileName ->
+            val fileDTO = FileController.getFileFromCache(fileName)
+            fileDTO.classes.forEach { classDTO ->
+                val jsonObject = KoleClazzAnalyzer.analyze(classDTO.getFQN(), false)
+                if (pathToMetricsOnDisk != null) {
+                    val file = File("$pathToMetricsOnDisk\\${classDTO.getFQN()}.json")
+                    file.writeText(jsonObject.toString())
+                } else {
+                    println(jsonObject)
+                }
+            }
+        }
+    }
+
+    fun loadFilesFromDisk(maximumNumberOfFiles: Int, pathOnDisk: String) {
+        FileController.clean()
+        FileController.setMaximumNumberOfFiles(maximumNumberOfFiles)
+        FileController.setPathOnDisk(pathOnDisk)
+        FileController.loadFilesFromDisk()
+    }
+
 
     fun bindFromDisk(maximumNumberOfFiles: Int, pathOnDisk: String) {
         FileController.clean()
@@ -41,9 +79,14 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
     fun parseAndSaveToDisk(customCachePlace: String) {
         FileController.clean()
+        val startTime = System.currentTimeMillis()
         val filePaths = readPathToFiles(pathToProject)
         FileController.setPathOnDisk(customCachePlace)
         parseFiles(filePaths)
+        val endTime = System.currentTimeMillis()
+        val minutes = (endTime - startTime) / 1000 / 60
+        val seconds = (endTime - startTime) / 1000 % 60
+        println("Parsing took $minutes minutes and $seconds seconds")
         FileController.storeAllFilesOnDisk()
     }
 
@@ -55,13 +98,18 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     fun simpleParse() {
+        val startTime = System.currentTimeMillis()
         readPathToFiles(pathToProject)
         parseFiles()
+        val endTime = System.currentTimeMillis()
+        val minutes = (endTime - startTime) / 1000 / 60
+        val seconds = (endTime - startTime) / 1000 % 60
+        println("Parsing took $minutes minutes and $seconds seconds")
     }
 
     fun printInteractiveInferface() {
         var option = 0
-        while (option != 8) {
+        while (option != 9) {
             showMenu()
             option = readLine()?.toInt() ?: 0
             when (option) {
@@ -72,13 +120,18 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
                 5 -> exportClasses()
                 6 -> exportAllFiles()
                 7 -> enterFileDtos()
-                8 ->  {
+                8 -> getGeneralStats()
+                9 ->  {
                     println("Exiting")
                     return
                 }
                 else -> println("Invalid option")
             }
         }
+    }
+
+    private fun getGeneralStats() {
+        println(KoleGeneralAnalyzer.getStatistics())
     }
 
     private fun enterFileDtos() {
@@ -103,7 +156,23 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
     }
 
     private fun computeSpecialMetrics() {
-
+        val allFiles = FileController.getFileNames()
+        val optionsMap = mutableMapOf<Int, String>()
+        var option = 0
+        allFiles.forEach { fileName ->
+            optionsMap[option] = fileName
+            println("$option -> $fileName")
+            option++
+        }
+        println("Choose source file")
+        option = readLine()?.toInt() ?: 0
+        val fileDTO = FileController.getFileFromCache(optionsMap[option] ?: "")
+        println("Choose target file")
+        option = readLine()?.toInt() ?: 0
+        val targetFileDTO = FileController.getFileFromCache(optionsMap[option] ?: "")
+        val listOfMetrics = listOf("extCalls", "returns", "extData", "extDataStrict", "declarations")
+        val json = KoleAnalyzer.computeMetric(listOfMetrics, fileDTO.getFileSavedName(), targetFileDTO.getFileSavedName(), false)
+        println(json)
     }
 
     private fun exportAllFiles() {
@@ -137,7 +206,8 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
         println("5. Serialize classes Dtos")
         println("6. Serialize files and store to disk")
         println("7. Print a file")
-        println("8. Exit")
+        println("8. Get general stats")
+        println("9. Exit")
     }
 
     fun enterClassesDtos() {
@@ -146,10 +216,26 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
     fun bindAllClasses() {
         val allFiles = FileController.getFileNames()
+        val total = allFiles.size
+        val starTime = System.currentTimeMillis()
+        println("Binding all files...")
+        print("\r[]0%")
+        var i = 0
         for (fileName in allFiles) {
-            val fileBinder = FileBinder(FileController.getFileFromCache(fileName))
-            fileBinder.bind()
+            printProgressBar(i+1, total)
+            try {
+                val fileBinder = FileBinder(FileController.getFileFromCache(fileName))
+                fileBinder.bind()
+            }catch (e : Exception) {
+                logger.warn("Exception at binding file: {$fileName}. With message: {$e} stack trace:")
+            }
+            i++
         }
+        val endTime = System.currentTimeMillis()
+        println("\nDone binding files")
+        val minutes = (endTime - starTime) / 1000 / 60
+        val seconds = (endTime - starTime) / 1000 % 60
+        println("Binding took $minutes minutes and $seconds seconds")
     }
 
     private fun chooseClass(): ClassDTO {
@@ -248,6 +334,10 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
         Files.walkFileTree(folderPath, visitor)
         return localPathToFiles
+    }
+
+    fun computeGeneralMetrics() {
+        println(KoleGeneralAnalyzer.getStatistics())
     }
 
 }

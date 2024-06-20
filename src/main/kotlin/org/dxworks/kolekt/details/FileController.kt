@@ -20,6 +20,10 @@ object FileController {
         classesDictionaryCache = FQNClassesDictionary()
     }
 
+    fun getNamesOfAllTheFiles(): List<String> {
+        return allFiles.keys.toList()
+    }
+
     fun setPathOnDisk(path: String?) {
         pathOnDisk = path
     }
@@ -81,7 +85,11 @@ object FileController {
     private fun removeOldestFilesFromCache(n: Int) {
         for (i in 0..<n) {
             val fileToBeRemoved = filesThatAreCached.removeLast() ?: continue
-            classesDictionaryCache.removeClassesForFile(fileToBeRemoved!!)
+            try {
+                classesDictionaryCache.removeClassesForFile(fileToBeRemoved!!)
+            } catch (e: IllegalArgumentException) {
+                logger.warn("CLasses not found for file $fileToBeRemoved")
+            }
             if (allFiles[fileToBeRemoved] == null) {
                 throw IllegalArgumentException("File not found")
             }
@@ -176,7 +184,12 @@ object FileController {
         if (classDTO != null) {
             return classDTO
         } else {
-            populateDictionaryWithClassesFromSaveFile(classFQN)
+            try {
+                populateDictionaryWithClassesFromSaveFile(classFQN)
+            } catch (e: IllegalArgumentException) {
+                logger.warn("Class not found in files")
+                return null
+            }
             return classesDictionaryCache.findClassDTO(classFQN)
         }
     }
