@@ -32,7 +32,7 @@ information, this can be used for production environment.
 The tool can be run using the generated ```.jar``` file (how to obtain it is mentioned above).
 The user can run the following command:
 ```shell
-java -jar KoleKT.jar -h
+java -jar KoleKT-v1.0.jar -h
 ```
 The option `-h` indicated the help menu for KoleKT. This should contain all the needed
 information for accessing all the functionalities of the tool.

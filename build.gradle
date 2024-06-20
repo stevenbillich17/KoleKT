@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.dxworks'
-version = 'v1.4-TRACE'
+version = 'v1.0'
 
 repositories {
     mavenCentral()
