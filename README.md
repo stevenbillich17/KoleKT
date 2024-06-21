@@ -27,10 +27,10 @@ The command above will generate the file under the path "build\libs". An importa
 is that the command might differ slightly on different operating systems. This one
 works for Windows OS.
 
-Default implementation uses _TRACE_ logging level. When running the tool this will generate
+Default implementation uses _ERROR_ logging level. When running the tool this will NOT generate
 a lot of information for debugging the app. This can be changed inside the `src/main/resources/logback.xml`
-by using different levels, for example changing *DEBUG* to *ERROR* will result in less debugging
-information, this can be used for production environment.
+by using different levels, for example changing *ERROR* to *TRACE* will result in a lot of debugging
+information, this can be used for developing the tool.
 
 
 ## Running the tool
