@@ -1,6 +1,11 @@
-# KoleKT
+
+<div style="display: flex; align-items: center;">
+  <img src="logo/KoleKT-logo-1.png" alt="Example Image" width="80" style="margin-right: 5px;">
+    <span style="font-size: 32px; font-weight: bold;">KoleKT</span>
+</div>
+
 Is a tool used for parsing and creating a model of Kotlin code. It is able
-to compute different metrics on the provided source code.
+to compute both software and relation metrics on the provided source code.
 
 ## Build the JAR
 To be able to build and run the tool. You must have a ```.jar``` file from the 'grammar-tools'
@@ -100,10 +105,15 @@ information for accessing all the functionalities of the tool.
   Compute general metrics for the project
 
 
+## Info about metrics
+KoleKT computes 15 different metrics on each class. It is also able to compute
+5 relational metrics between two files given as input to the tool.
+
+
 ## Acknowledgements
 This project incorporates code from the ```Grammar-Tools``` project, which are licensed 
 under the Apache License, Version 2.0. The full text of the license can be found in the
-'license\APACHE-2.0.txt' file
+'licenses\APACHE-2.0.txt' file
 
 The project computes metrics taken from the book “Object Oriented Metrics In
 Practice” written by Michele Lanza and Radu Marinescu. ISBN: 9783540395386
