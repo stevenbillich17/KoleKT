@@ -1,7 +1,7 @@
 
 <div style="display: flex; align-items: center;">
-  <img src="logo/KoleKT-logo-1.png" alt="Example Image" width="100" style="margin-right: 10px;">
-  <h1 style="margin: 0;">KoleKT</h1>
+  <img src="logo/KoleKT-logo-1.png" alt="Example Image" width="120" style="margin-right: 10px;">
+  <strong style="font-size: 32px;">KoleKT</strong>
 </div>
 
 Is a tool used for parsing and creating a model of Kotlin code. It is able
