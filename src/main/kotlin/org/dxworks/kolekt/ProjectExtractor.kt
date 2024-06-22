@@ -8,6 +8,7 @@ import org.dxworks.kolekt.analyze.KoleAnalyzer
 import org.dxworks.kolekt.analyze.KoleClazzAnalyzer
 import org.dxworks.kolekt.analyze.KoleGeneralAnalyzer
 import org.dxworks.kolekt.binders.FileBinder
+import org.dxworks.kolekt.codesmells.CodeSmellComputer
 import org.dxworks.kolekt.details.DictionariesController
 import org.dxworks.kolekt.details.FileController
 import org.dxworks.kolekt.dtos.ClassDTO
@@ -338,6 +339,11 @@ class ProjectExtractor(private val pathToProject: String, private val pathToGene
 
     fun computeGeneralMetrics() {
         println(KoleGeneralAnalyzer.getStatistics())
+    }
+
+    fun computeCodeSmells() {
+        val codeSmellComputer = CodeSmellComputer()
+        codeSmellComputer.computeAll()
     }
 
 }

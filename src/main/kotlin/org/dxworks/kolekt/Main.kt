@@ -31,6 +31,7 @@ fun main(args: Array<String>) {
     var computeClassMetricsOnAll = false
     var computeSpecialMetrcs = false
     var computeGeneralMetrics = false
+    var smellCode = false
 
     var sourceFile: String? = null
     var targetFile: String? = null
@@ -68,6 +69,8 @@ fun main(args: Array<String>) {
             storeBindings = true
         } else if (args[i] == "-generalMetrics") {
             computeGeneralMetrics = true
+        } else if (args[i] == "-smell") {
+            smellCode = true
         }
     }
 
@@ -112,6 +115,11 @@ fun main(args: Array<String>) {
         } else {
             println("Special metrics require two files to be provided.")
         }
+    }
+
+    if (smellCode && loadPath != null) {
+        val extractor = ProjectExtractor("", loadPath)
+        extractor.computeCodeSmells()
     }
 
     if (storeBindings && loadPath != null) {
