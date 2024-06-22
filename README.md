@@ -16,18 +16,24 @@ like poor code design. So, KoleKT is an ideal solution for static analysis of Ko
 specific problems.
 
 ## Build the JAR
-To be able to build and run the tool. You must have a ```.jar``` file from the 'grammar-tools'
+Firstly, clone the project on your local machine using the following command:
+
+`git clone https://github.com/stevenbillich17/KoleKT.git`
+
+To be able to build and run the tool, you must have a ```.jar``` file from the 'grammar-tools'
 repository. [Link to the repository](https://github.com/Kotlin/grammar-tools)
 
 The currently supported version for the 'grammar-tools' is "v0.1-43".
 
-After getting the file, the path for it that resides in the `build.gradle` must be changed so that it
-matches the one where the `.jar` file was placed after following the previous step.
+After getting the file, the path from KoleKT project for it that resides in the KoleKT root folder
+in `build.gradle` file and refers to the 'grammar-tools' must be changed so that it matches the one where
+the 'grammar-tools' `.jar` file was placed after following the previous step.
 
 To be able to build the application Java Development Kit must also be installed on the machine where
 KoleKT is placed along with Kotlin compiler and Gradle.
 
-To build a ```.jar``` file the following command must be run:
+To build a `.jar` file the following command must be run inside the root of the KoleKT project, where the
+'gradlew.bat' file is located:
 ```shell
 gradlew jar
 ```
